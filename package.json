@@ -1,0 +1,61 @@
+{
+  "name": "@saolence/dsh-restart-handoff",
+  "version": "0.1.0",
+  "description": "Restart the DSH desktop host when a change requires it, then hand the conversation back to the same session.",
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "cordis",
+    "restart",
+    "handoff",
+    "auto-restart",
+    "session",
+    "resume"
+  ],
+  "homepage": "https://github.com/Saolence/dsh-restart-handoff#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Saolence/dsh-restart-handoff.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Saolence/dsh-restart-handoff/issues"
+  },
+  "author": "Saolence",
+  "license": "MIT",
+  "type": "module",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./package.json": "./package.json",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "index.js",
+    "lib",
+    "client.js",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg",
+    "README.md",
+    "LICENSE",
+    "README.en.md"
+  ],
+  "scripts": {
+    "test": "node test/smoke.mjs && node test/client-contract.mjs"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "~4.0.5"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web"
+    },
+    "manifestVersion": 1
+  }
+}

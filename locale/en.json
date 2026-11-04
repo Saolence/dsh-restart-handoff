@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "dsh-restart-handoff",
+    "description": "Restarts the DSH desktop host when a change requires it, then hands the conversation back to the same session."
+  }
+}

@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<title>侧栏底部的重启方块预览</title>
+<style>
+  :root {
+    --dsw-alias-bg-base: #16181d;
+    --dsw-alias-bg-layer-1: #1c1f26;
+    --dsw-alias-bg-layer-2: #242833;
+    --dsw-alias-bg-overlay: #1f232b;
+    --dsw-alias-border-l1: #2d323d;
+    --dsw-alias-border-l2: #3a4050;
+    --dsw-alias-label-primary: #e8eaee;
+    --dsw-alias-label-secondary: #9aa1ad;
+    --dsw-alias-brand-primary: #4d7cfe;
+    --dsw-alias-state-success-primary: #3c9a53;
+    --dsw-alias-state-warn-primary: #d99a2b;
+    --dsw-alias-state-error-primary: #d95050;
+    --dsw-alias-state-idle-primary: #6b7280;
+  }
+  :root[data-theme="light"] {
+    --dsw-alias-bg-base: #ffffff;
+    --dsw-alias-bg-layer-1: #ffffff;
+    --dsw-alias-bg-layer-2: #f4f5f7;
+    --dsw-alias-bg-overlay: #ffffff;
+    --dsw-alias-border-l1: #e6e8ec;
+    --dsw-alias-border-l2: #d6dae1;
+    --dsw-alias-label-primary: #1b1f26;
+    --dsw-alias-label-secondary: #6a7280;
+    --dsw-alias-brand-primary: #3d6ff5;
+    --dsw-alias-state-success-primary: #1a9c53;
+    --dsw-alias-state-warn-primary: #c07f0a;
+    --dsw-alias-state-error-primary: #cf3b3b;
+    --dsw-alias-state-idle-primary: #9aa1ac;
+  }
+  body {
+    margin: 0; padding: 40px; background: var(--dsw-alias-bg-base);
+    font-family: -apple-system, "SF Pro Text", "PingFang SC", system-ui, sans-serif;
+  }
+  /* stand-in for the sidebar foot: a few list rows, the tile, then the account row */
+  .rh-mock {
+    position: relative; width: 248px; padding: 12px 10px 10px; box-sizing: border-box;
+    background: var(--dsw-alias-bg-layer-1); border: 1px solid var(--dsw-alias-border-l1);
+    border-radius: 14px; display: flex; flex-direction: column; gap: 8px;
+  }
+  .rh-list { height: 84px; border-radius: 8px; background: var(--dsw-alias-bg-layer-2); opacity: 0.5; }
+  .rh-account {
+    display: flex; align-items: center; gap: 9px; width: 100%;
+    padding: 8px; box-sizing: border-box; border: 0; border-radius: 9px; cursor: pointer;
+    background: transparent; color: var(--dsw-alias-label-primary);
+    font: inherit; font-size: 0.82rem; text-align: left;
+  }
+  .rh-account:hover { background: var(--dsw-alias-bg-layer-2); }
+  .rh-avatar {
+    width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center;
+    background: var(--dsw-alias-bg-layer-2); color: var(--dsw-alias-label-secondary);
+    font-size: 0.72rem;
+  }
+  .rh-name { flex: 1; }
+  #ring { display: block; }
+</style>
+</head>
+<body>
+<div class="rh-mock">
+  <div class="rh-list"></div>
+  <div id="ring"></div>
+  <button class="rh-account" type="button">
+    <span class="rh-avatar">👤</span><span class="rh-name">186****16</span>
+  </button>
+</div>
+</div>
+<script>
+window.__errors = [];
+window.addEventListener("error", (e) => window.__errors.push(String(e && e.message)));
+window.addEventListener("unhandledrejection", (e) => window.__errors.push("rej:" + String(e && e.reason && e.reason.stack || e.reason)));
+</script>
+<script type="module">
+import { createElement, mount, useState, useReducer, useRef, useEffect, useCallback, useMemo } from "./mini-react.js";
+
+const params = new URLSearchParams(location.search);
+if (params.get("theme") === "light") document.documentElement.dataset.theme = "light";
+const scenario = params.get("s") || "idle";
+const now = Date.now();
+
+const base = {
+  desktop: true,
+  settings: { autoRestart: true },
+  bootedAt: now - 1000 * 60 * 42,
+  countdown: { active: false },
+  deferred: { active: false },
+  handoff: { active: false },
+  busy: { count: 0 },
+};
+const scenarios = {
+  idle: base,
+  countdown: { ...base, countdown: { active: true, restartAt: now + 3200, totalMs: 5000 } },
+  waiting: { ...base, deferred: { active: true, reason: "plugin-manager: host-module" } },
+  reconnect: base,
+};
+window.__SCENARIO__ = scenarios[scenario];
+base.boot = { pid: 1111 };
+
+// "reconnect": fake a restart — the endpoint goes away, comes back with a new
+// boot pid, and the page paints the shell's reconnect wording for a while.
+let restartedAt = 0;
+if (scenario === "reconnect") {
+  const banner = document.createElement("div");
+  banner.style.cssText =
+    "position:fixed;top:10px;left:50%;transform:translateX(-50%);font:12px/1.4 -apple-system,sans-serif;color:#b8860b";
+  document.body.appendChild(banner);
+  setInterval(() => {
+    if (!restartedAt) return;
+    const dt = Date.now() - restartedAt;
+    const stuck = params.get("stuck") === "1";
+    banner.textContent = dt < 7000 ? "重新连接中…" : stuck ? "已连接" : dt < 8500 ? "连接成功" : "";
+  }, 100);
+  window.__restartedAt = () => restartedAt;
+}
+window.fetch = async (url, init) => {
+  if (init && init.method === "POST") {
+    restartedAt = Date.now();
+    return { ok: true, json: async () => ({ ok: true }) };
+  }
+  if (restartedAt) {
+    const dt = Date.now() - restartedAt;
+    if (dt < 5000) throw new Error("offline");
+    return { ok: true, json: async () => ({ ...window.__SCENARIO__, boot: { pid: 2222 } }) };
+  }
+  return { ok: true, json: async () => window.__SCENARIO__ };
+};
+
+const React = { createElement, useState, useReducer, useRef, useEffect, useCallback, useMemo };
+let captured = null;
+window.__ModuleLoader__ = { load: (spec) => { captured = spec.factory(() => React); } };
+await import("../../client.js");
+
+const registry = {};
+captured.apply({ slots: { inject: (_name, fn) => fn(), register: (meta, component) => { registry[meta.name] = component; return () => {}; } } });
+mount(registry["sidebar.footer.action"], document.getElementById("ring"));
+</script>
+</body>
+</html>

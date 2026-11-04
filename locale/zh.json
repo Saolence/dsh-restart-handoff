@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "dsh-restart-handoff",
+    "description": "改动需要重启宿主时自动重启，并在重启后把交接话投回原会话继续。"
+  }
+}

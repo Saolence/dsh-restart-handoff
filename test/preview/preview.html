@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<title>重启交接面板预览</title>
+<style>
+  :root {
+    --dsw-alias-bg-base: #16181d;
+    --dsw-alias-bg-layer-1: #1c1f26;
+    --dsw-alias-bg-layer-2: #242833;
+    --dsw-alias-border-l1: #2d323d;
+    --dsw-alias-border-l2: #3a4050;
+    --dsw-alias-label-primary: #e8eaee;
+    --dsw-alias-label-secondary: #9aa1ad;
+    --dsw-alias-brand-primary: #4d7cfe;
+    --dsw-alias-state-success-primary: #3c9a53;
+    --dsw-alias-state-warn-primary: #d99a2b;
+    --dsw-alias-state-error-primary: #d95050;
+    --dsw-alias-state-idle-primary: #6b7280;
+  }
+  /* ?theme=light — daytime tokens; screenshots for the README use this. */
+  :root[data-theme="light"] {
+    --dsw-alias-bg-base: #ffffff;
+    --dsw-alias-bg-layer-1: #ffffff;
+    --dsw-alias-bg-layer-2: #f4f5f7;
+    --dsw-alias-border-l1: #e6e8ec;
+    --dsw-alias-border-l2: #d6dae1;
+    --dsw-alias-label-primary: #1b1f26;
+    --dsw-alias-label-secondary: #6a7280;
+    --dsw-alias-brand-primary: #3d6ff5;
+    --dsw-alias-state-success-primary: #1a9c53;
+    --dsw-alias-state-warn-primary: #c07f0a;
+    --dsw-alias-state-error-primary: #cf3b3b;
+    --dsw-alias-state-idle-primary: #9aa1ac;
+  }
+  body {
+    margin: 0; padding: 28px; background: var(--dsw-alias-bg-base);
+    font-family: -apple-system, "SF Pro Text", "PingFang SC", system-ui, sans-serif;
+  }
+  /* the preview re-mounts the whole tree on every tick; keep the entrance
+     animation from restarting mid-screenshot */
+  .ar-card--count { animation: none !important; }
+  #root { background: var(--dsw-alias-bg-layer-1); border-radius: 16px; padding: 22px; }
+  :root[data-theme="light"] #root { border: 1px solid #eef0f3; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="module">
+import { createElement, mount } from "./mini-react.js";
+
+const params = new URLSearchParams(location.search);
+if (params.get("theme") === "light") document.documentElement.dataset.theme = "light";
+const scenario = params.get("s") || "idle";
+const now = Date.now();
+const base = {
+  desktop: true,
+  settings: { autoRestart: true, toolEnabled: true, resumeAfterRestart: true, deferUntilIdle: true, graceMs: 5000 },
+  bootedAt: now - 1000 * 60 * 42,
+  logPath: "/Users/you/.dsh/restart-handoff.log",
+  appPath: "/Applications/DeepSeek Harness.app",
+  countdown: { active: false },
+  deferred: { active: false },
+  handoff: { active: false },
+  history: [
+    { time: now - 1000 * 60 * 3, kind: "resumed", attempts: 1 },
+    { time: now - 1000 * 60 * 3 - 9000, kind: "restarting", reason: "plugin-manager: host-module" },
+    { time: now - 1000 * 60 * 3 - 14000, kind: "scheduled", reason: "plugin-manager: host-module", delayMs: 5000 },
+    { time: now - 1000 * 60 * 40, kind: "cancelled", reason: "plugin-manager: package-moved", by: "panel" },
+    { time: now - 1000 * 60 * 90, kind: "deferred", reason: "restart_and_continue" },
+  ],
+};
+
+const scenarios = {
+  idle: base,
+  countdown: { ...base, countdown: { active: true, restartAt: now + 3200, totalMs: 5000, reason: "plugin-manager: host-module" } },
+  waiting: { ...base, deferred: { active: true, reason: "plugin_manager 安装后需要重启", sessionId: "s1" } },
+  handoff: { ...base, handoff: { active: true, reason: "plugin-manager: no-hmr", sessionId: "s1" } },
+  empty: { ...base, history: [], countdown: { active: false } },
+};
+
+window.__SCENARIO__ = scenarios[scenario];
+window.fetch = async (url) => {
+  const dbg = window.__dbg || (window.__dbg = { steps: [], errors: [] });
+  dbg.steps.push("fetch:" + String(url));
+  return {
+    ok: true,
+    json: async () => {
+      dbg.steps.push("json:" + String(url));
+      return String(url).includes("status") ? window.__SCENARIO__ : { ok: true, settings: window.__SCENARIO__.settings };
+    },
+  };
+};
+
+let panel = null;
+window.__ModuleLoader__ = {
+  load(spec) {
+    const mod = spec.factory((name) => {
+      if (name === "react") return { createElement, Fragment: "#frag",
+        useState: null };
+      throw new Error(name);
+    });
+    panel = mod;
+  },
+};
+</script>
+<script>
+// client.js 是普通脚本，直接 eval 到 window 上，方便拿到 __ModuleLoader__.load
+</script>
+<script type="module">
+import { createElement, Fragment, mount, useState, useReducer, useRef, useEffect, useCallback, useMemo } from "./mini-react.js";
+const React = { createElement, Fragment, useState, useReducer, useRef, useEffect, useCallback, useMemo };
+let captured = null;
+window.__ModuleLoader__ = { load: (spec) => { captured = spec.factory(() => React); } };
+await import("../../client.js");
+window.__panel = captured;
+let comp = null;
+window.__dbg = { steps: [], errors: [] };
+const origFetch = window.fetch;
+window.__dbg.calls = [];
+window.fetch = (...a) => { window.__dbg.calls.push(String(a[0])); return origFetch(...a); };
+try {
+  captured.apply({ slots: { inject: (_n, fn) => fn(), register: (_m, c) => { comp = c; return () => {}; } } });
+  window.__dbg.steps.push("applied:" + typeof comp);
+  mount(comp, document.getElementById("root"));
+  window.__dbg.steps.push("mounted");
+} catch (e) {
+  window.__dbg.errors.push(String(e && e.stack || e));
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,5 @@
+# dsh-restart-handoff — restart the DSH desktop host when a change requires
+# it, then hand the conversation back to the same session.
+- insert:
+    - id: restart-handoff
+      name: "@saolence/dsh-restart-handoff"
