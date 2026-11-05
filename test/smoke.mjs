@@ -146,9 +146,11 @@ assert.ok(rendered.includes("- **做到哪**：halfway"), rendered);
 assert.ok(rendered.includes("- **下一步**：finish it"), rendered);
 assert.ok(rendered.includes("- **别重做**：the tests"), rendered);
 // The list needs a blank line before it, or renderers glue the header onto the
-// first bullet; and each bullet must sit on its own line.
+// first bullet; and each bullet is separated by a blank line so the items get
+// vertical breathing room instead of stacking tight.
 assert.ok(rendered.includes("09:07\n\n- **为什么**"), rendered);
-assert.equal(rendered.split("\n").filter((line) => line.startsWith("- ")).length, 4, "four bullets");
+assert.equal(rendered.split("- ").length - 1, 4, "four bullets");
+assert.equal(rendered.split("\n\n- ").length - 1, 4, "every bullet starts after a blank line");
 
 // A missing field takes its label with it, so no empty "下一步：" is delivered.
 const partial = continuationText({ ...full, progress: "", skip: "" }, {});
