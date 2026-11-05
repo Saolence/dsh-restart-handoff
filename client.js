@@ -671,6 +671,8 @@ window.__ModuleLoader__.load({
       const deferred = (status && status.deferred) || { active: false };
       const handoff = (status && status.handoff) || { active: false };
       const desktop = status ? Boolean(status.desktop) : true;
+      const host = (status && status.host) || (desktop ? "desktop" : null);
+      const canRestart = host === "desktop" || host === "web";
       const waiting = (Boolean(deferred.active) || Boolean(handoff.active)) && !countdown.active;
       const armed = armUntil > Date.now();
       const armMs = armed ? Math.max(0, armUntil - Date.now()) : 0;
@@ -768,8 +770,8 @@ window.__ModuleLoader__.load({
         return () => clearInterval(id);
       }, [armed, armUntil, busy]);
 
-      const label = !desktop
-        ? "只能在桌面版使用"
+      const label = !canRestart
+        ? "只能在桌面版或 dsh web 里使用"
         : armed
           ? Math.ceil(armMs / 1000) + " 秒后重启，点一下取消"
           : countdown.active
@@ -779,7 +781,7 @@ window.__ModuleLoader__.load({
               : "点一下手动重启";
       const glyph = flash
         ? flash
-        : !desktop
+        : !canRestart
         ? "—"
         : armed
           ? Math.ceil(armMs / 1000) + "s"
@@ -804,7 +806,7 @@ window.__ModuleLoader__.load({
           "data-tone": tone,
           title: label,
           "aria-label": label,
-          disabled: !desktop || busy,
+          disabled: !canRestart || busy,
           onClick: onRingClick,
         },
         h(
@@ -983,6 +985,9 @@ window.__ModuleLoader__.load({
       const deferred = (status && status.deferred) || { active: false };
       const handoff = (status && status.handoff) || { active: false };
       const desktop = status ? Boolean(status.desktop) : true;
+      const host = (status && status.host) || (desktop ? "desktop" : null);
+      const canRestart = host === "desktop" || host === "web";
+      const webHost = host === "web";
       const autoOn = settings.autoRestart !== false;
       const waiting = (Boolean(deferred.active) || Boolean(handoff.active)) && !countdown.active;
       const busyCount = Math.max(0, Number(status && status.busy && status.busy.count) || 0);
@@ -1004,15 +1009,17 @@ window.__ModuleLoader__.load({
       let pillText = "守护中";
       let actions = null;
 
-      if (!desktop) {
+      if (!canRestart) {
         tone = "idle";
-        heroTitle = "只能在桌面版使用";
-        heroSub = "这个功能要重开 macOS 上的 DSH 桌面程序，网页版用不了。";
-        pillText = "不可用";
+        heroTitle = "这里不用重启";
+        heroSub = "自动重启只对 DSH 桌面版和 dsh web 宿主有意义；headless、脚本这类一次性进程不用它操心。";
+        pillText = "不适用";
       } else if (countdown.active) {
         tone = "warn";
         heroTitle = "即将自动重启";
-        heroSub = "重开只要几秒，回来接着干活；不想现在重开就取消。";
+        heroSub = webHost
+          ? "重开只要几秒，回来后浏览器会新开一个标签，这个标签会失效。"
+          : "重开只要几秒，回来接着干活；不想现在重开就取消。";
         pillText = "即将重启";
         actions = h(
           "div",
@@ -1040,12 +1047,16 @@ window.__ModuleLoader__.load({
         pillText = "已暂停";
       }
 
-      if (!actions && desktop) {
+      if (!actions && canRestart) {
         actions = askConfirm
           ? h(
               "div",
               { className: "rhs-actions" },
-              h("span", { className: "rhs-actions-note" }, "确定现在重启？重开大约要几秒。"),
+              h(
+                "span",
+                { className: "rhs-actions-note" },
+                webHost ? "确定现在重启？重开后浏览器会新开一个标签。" : "确定现在重启？重开大约要几秒。",
+              ),
               h("button", { type: "button", className: "rhs-btn rhs-btn--primary", onClick: restartNow, disabled: busy }, "重启"),
               h("button", { type: "button", className: "rhs-btn rhs-btn--quiet", onClick: () => setAskConfirm(false) }, "取消"),
             )
@@ -1057,6 +1068,9 @@ window.__ModuleLoader__.load({
                 { type: "button", className: "rhs-btn", onClick: () => setAskConfirm(true), disabled: busy },
                 "现在重启",
               ),
+              webHost
+                ? h("span", { className: "rhs-actions-note" }, "web 端重启后会新开一个标签，这个会失效")
+                : null,
             );
       }
 
@@ -1131,21 +1145,21 @@ window.__ModuleLoader__.load({
             label: "需要重开时自动帮我重启",
             desc: "改完插件、装了新东西，需要重开才生效时，我自动处理。",
             checked: autoOn,
-            disabled: busy || !desktop || !status,
+            disabled: busy || !status,
             onChange: (value) => saveSettings({ autoRestart: value }),
           }),
           h(Row, {
             label: "等所有任务都做完再重启",
             desc: "不打断正在跑的对话、子任务和别的窗口。",
             checked: settings.waitForAllSessions !== false,
-            disabled: busy || !desktop || !status,
+            disabled: busy || !status,
             onChange: (value) => saveSettings({ waitForAllSessions: value }),
           }),
           h(Row, {
             label: "重启后自动接着做",
             desc: "回来之后我自己知道刚才做到哪、接下来做什么，不用你再说一遍。",
             checked: settings.resumeAfterRestart !== false,
-            disabled: busy || !desktop || !status,
+            disabled: busy || !status,
             onChange: (value) => saveSettings({ resumeAfterRestart: value }),
           }),
         ),
@@ -1163,21 +1177,21 @@ window.__ModuleLoader__.load({
             label: "允许我主动申请重启",
             desc: "有些时候我会自己判断需要重开，这条关掉就只能靠面板按钮。",
             checked: settings.toolEnabled !== false,
-            disabled: busy || !desktop || !status,
+            disabled: busy || !status,
             onChange: (value) => saveSettings({ toolEnabled: value }),
           }),
           h(Row, {
             label: "每轮说完再动手",
             desc: "等这一轮回答完整说完、结果送到你眼前再退出。",
             checked: settings.deferUntilIdle !== false,
-            disabled: busy || !desktop || !status,
+            disabled: busy || !status,
             onChange: (value) => saveSettings({ deferUntilIdle: value }),
           }),
           h(Row, {
             label: "顺手清理过时的登录记录",
             desc: "每次启动都会留一条登录痕迹，重开时只保留最新的那条。",
             checked: settings.pruneAuthCookies !== false,
-            disabled: busy || !desktop || !status,
+            disabled: busy || !status,
             onChange: (value) => saveSettings({ pruneAuthCookies: value }),
           }),
         ),
@@ -1186,7 +1200,7 @@ window.__ModuleLoader__.load({
           settings,
           preview: status && status.preview,
           defaultTemplate: status && status.defaultTemplate,
-          disabled: busy || !desktop || !status,
+          disabled: busy || !status,
           save: saveSettings,
         }),
 

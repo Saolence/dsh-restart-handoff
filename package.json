@@ -1,6 +1,6 @@
 {
   "name": "@saolence/dsh-restart-handoff",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Restart the DSH desktop host when a change requires it, then hand the conversation back to the same session.",
   "keywords": [
     "dsh",
@@ -44,7 +44,7 @@
     "README.en.md"
   ],
   "scripts": {
-    "test": "node test/smoke.mjs && node test/boot.mjs && node test/client-contract.mjs"
+    "test": "node test/smoke.mjs && node test/boot.mjs && node test/client-contract.mjs && node test/cli-relaunch.mjs"
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "~4.0.5"

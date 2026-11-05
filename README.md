@@ -145,6 +145,22 @@ dsh plugin --profile desktop add @saolence/dsh-restart-handoff
 >
 > 改这个包**本身**不会热重载：profile 里指向它的是符号链接，HMR 收不到通知，改完要停用再启用一次（或重启一次）才生效。
 
+## 也支持 dsh web
+
+桌面版之外，`dsh web` 这类命令行宿主也能用：
+
+```bash
+dsh plugin --profile web add @saolence/dsh-restart-handoff
+```
+
+用法一样，但重开的对象是那个 Node 进程，所以有三点不同：
+
+- **浏览器会新开一个标签**。`dsh web` 每次启动都会生成新的访问令牌，原来那个标签必然失效，插件会在新进程打印出地址后自动把它打开——旧标签关掉就行。
+- **必须是从终端里启动的**。插件记下自己的命令行，退出后用同样的参数重放；交给 systemd、pm2 这类进程管理器管的，建议关掉自动重启，让管理器自己拉起来更稳。
+- **`--no-open` 时不弹浏览器**，新地址记在 `~/.dsh/restart-handoff/cli-host.log` 里。
+
+固定 `--port` 会更好（少一个变量），但不是必须：地址是抓出来的，端口变了也照样打开。
+
 ## 设置里有什么
 
 设置 →「重启交接」。最上面一行大字说明现在的情况，有事就变成倒计时或「等你忙完」。
@@ -182,4 +198,4 @@ python3 -m http.server 8781 --directory test/preview
 
 ## 许可
 
-MIT，见 [LICENSE](LICENSE)。当前版本 0.1.0。
+MIT，见 [LICENSE](LICENSE)。当前版本 0.2.0。

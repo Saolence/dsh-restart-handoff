@@ -145,6 +145,22 @@ dsh plugin --profile desktop add @saolence/dsh-restart-handoff
 >
 > Editing this package does **not** hot-reload: the profile points at it through a symlink, so HMR never hears about the change. Toggle the plugin off and on (or restart once) after editing.
 
+## Also works with `dsh web`
+
+Besides the desktop app, a CLI host such as `dsh web` works too:
+
+```bash
+dsh plugin --profile web add @saolence/dsh-restart-handoff
+```
+
+Same behaviour, with three differences, because what gets restarted is that Node process:
+
+- **A fresh browser tab opens.** `dsh web` mints a new access token on every boot, so the old tab is always stale; the plugin watches the new process for the printed address and opens it. Close the old tab.
+- **It has to be launched from a terminal.** The plugin records its own command line and replays it after exiting. If a process manager (systemd, pm2) owns the host, leave automatic restart off and let the manager do it.
+- **With `--no-open` no browser is opened**; the new address is written to `~/.dsh/restart-handoff/cli-host.log`.
+
+Pinning `--port` is cleaner, but not required: the address is read from the output, so a new port works too.
+
 ## What the settings page contains
 
 Settings → "Restart handoff". The line at the top says what is happening right now; when something is pending it turns into a countdown or "waiting for you to finish".
@@ -182,4 +198,4 @@ Parameters: `s=idle|countdown|waiting|handoff|empty` for scenarios, `theme=dark`
 
 ## License
 
-MIT, see [LICENSE](LICENSE). Current version 0.1.0.
+MIT, see [LICENSE](LICENSE). Current version 0.2.0.

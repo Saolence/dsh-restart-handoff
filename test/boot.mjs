@@ -123,6 +123,8 @@ const status = await call("GET", "status");
 assert.equal(status.status, 200);
 assert.equal(status.json.settings.autoRestart, true);
 assert.equal(typeof status.json.defaultTemplate, "string", "the panel gets the shipped template to show as a placeholder");
+assert.equal(status.json.host, null, "a bare test process is not a restartable host");
+assert.equal(status.json.canRestart, false, "so the panel must not offer a restart");
 assert.deepEqual(status.json.templateFields, ["reason", "progress", "next", "skip", "session", "time"]);
 assert.ok(status.json.preview.includes("做到哪了："), "the status response carries a ready-made preview");
 

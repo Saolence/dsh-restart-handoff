@@ -15,7 +15,8 @@
  * where it stopped instead of waiting for the user to say "继续".
  */
 import { isChildAgent } from "./lib/access.js";
-import { appPath, launchRelaunch, notify } from "./lib/relaunch.js";
+import { appPath, launchRelaunch, logPath as helperLogPath, notify } from "./lib/relaunch.js";
+import { cliInvocation, launchCliRelaunch } from "./lib/relaunch-cli.js";
 import {
   DEFAULT_CONTINUATION_TEMPLATE,
   TEMPLATE_FIELDS,
@@ -83,7 +84,36 @@ const sleep = (ms) => new Promise((done) => {
   timer.unref?.();
 });
 
-const isDesktop = () => Boolean(process.versions?.electron);
+/**
+ * The profile a CLI launch asked for, read from argv. The bundled launcher is an
+ * Electron binary running with ELECTRON_RUN_AS_NODE, so `process.versions.electron`
+ * is set even for `dsh web` and cannot tell the two hosts apart on its own; the
+ * rewritten command line can (`--profile web --port … --no-open`).
+ */
+function requestedProfile(argv = process.argv) {
+  const text = argv.slice(1).join(" ");
+  const flag = text.match(/--profile[= ]+([^\s-][\w.-]*)/);
+  if (flag) return flag[1];
+  if (/(^|\s)web(\s|$)/.test(text) && /(_npx\/|\/dsh\/(lib|bin)\/|cli\.js\b)/.test(text)) return "web";
+  return null;
+}
+
+/**
+ * Which kind of host this plugin is running in, which decides how a restart is
+ * performed: the desktop app is quit and reopened through LaunchServices, while
+ * a CLI host (`dsh web`, `dsh --profile web`) is stopped and replayed from its
+ * own command line. Anything else (headless one-shot runs, the tui profile, an
+ * embedding test harness) has no browser window to bring back, so it is
+ * reported as unsupported rather than pretending.
+ */
+export function hostKind(argv = process.argv) {
+  const profile = requestedProfile(argv);
+  if (profile === "web") return "web";
+  if (profile) return null;
+  return Boolean(process.versions?.electron) ? "desktop" : null;
+}
+
+const isDesktop = () => hostKind() === "desktop";
 
 function sendJson(res, status, payload) {
   res.statusCode = status;
@@ -548,8 +578,11 @@ export function apply(ctx) {
   }
 
   function scheduleRestart(request) {
-    if (!isDesktop()) {
-      return { status: "unsupported", error: "restart-handoff only works inside the DSH desktop app" };
+    if (!hostKind()) {
+      return {
+        status: "unsupported",
+        error: "restart-handoff needs the DSH desktop app or a `dsh web` host",
+      };
     }
     const queued = queuedStatus();
     if (queued) return queued;
@@ -708,7 +741,8 @@ export function apply(ctx) {
     appendHistory({ kind: "restarting", reason: plan.reason, sessionId: plan.sessionId });
     log(`relaunching (host=${process.pid})`);
     try {
-      launchRelaunch(process.pid);
+      if (hostKind() === "desktop") launchRelaunch(process.pid);
+      else launchCliRelaunch({ hostPid: process.pid, invocation: cliInvocation(), logFile: helperLogPath() });
     } catch (error) {
       const message = String(error?.message ?? error);
       log(`relaunch spawn failed: ${message}`);
@@ -1054,6 +1088,10 @@ export function apply(ctx) {
 
   route("GET", `${ROUTE_PREFIX}/status`, () => ({
     desktop: isDesktop(),
+    // "desktop" | "web" | null — the panel needs it to explain what a restart
+    // will actually do (a web restart opens a fresh tab, the old one goes stale).
+    host: hostKind(),
+    canRestart: Boolean(hostKind()),
     settings: readSettings(),
     // What the panel needs to show the effective layout without duplicating the
     // renderer: the built-in default, plus a sample rendered with fake fields.
