@@ -124,7 +124,7 @@ assert.equal(status.status, 200);
 assert.equal(status.json.settings.autoRestart, true);
 assert.equal(typeof status.json.defaultTemplate, "string", "the panel gets the shipped template to show as a placeholder");
 assert.deepEqual(status.json.templateFields, ["reason", "progress", "next", "skip", "session", "time"]);
-assert.ok(status.json.preview.includes("**做到哪**"), "the status response carries a ready-made preview");
+assert.ok(status.json.preview.includes("做到哪了："), "the status response carries a ready-made preview");
 
 const preview = await call("POST", "preview", { template: "🔁 {{time}}\n下一步：{{next}}" });
 assert.equal(preview.status, 200);

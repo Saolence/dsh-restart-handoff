@@ -140,24 +140,23 @@ const full = {
   requestedAt: new Date(2026, 10, 5, 9, 7).getTime(),
 };
 const rendered = continuationText(full, {});
-assert.ok(rendered.startsWith("🔄 **DSH 已重启完成** · 09:07"), rendered);
-assert.ok(rendered.includes("- **为什么**：rationale"), rendered);
-assert.ok(rendered.includes("- **做到哪**：halfway"), rendered);
-assert.ok(rendered.includes("- **下一步**：finish it"), rendered);
-assert.ok(rendered.includes("- **别重做**：the tests"), rendered);
-// The list needs a blank line before it, or renderers glue the header onto the
-// first bullet; and each bullet is separated by a blank line so the items get
-// vertical breathing room instead of stacking tight.
-assert.ok(rendered.includes("09:07\n\n- **为什么**"), rendered);
-assert.equal(rendered.split("- ").length - 1, 4, "four bullets");
-assert.equal(rendered.split("\n\n- ").length - 1, 4, "every bullet starts after a blank line");
+assert.ok(rendered.startsWith("DSH 刚重启好（09:07）。"), rendered);
+assert.ok(rendered.includes("起因：rationale"), rendered);
+assert.ok(rendered.includes("做到哪了：halfway"), rendered);
+assert.ok(rendered.includes("接下来第一步：finish it"), rendered);
+assert.ok(rendered.includes("不用重做：the tests"), rendered);
+// Plain prose, not Markdown: no bold, no bullets, and every block separated by a
+// blank line so renderers keep the breaks a human would expect.
+assert.ok(!/[*_`]|^- /m.test(rendered), `default hand-off must stay unformatted: ${rendered}`);
+assert.equal(rendered.split("\n\n").length, 5, "five blocks: header plus four fields");
 
-// A missing field takes its label with it, so no empty "下一步：" is delivered.
+// A missing field takes its label with it, so no empty "接下来第一步：" is delivered.
 const partial = continuationText({ ...full, progress: "", skip: "" }, {});
-assert.ok(!partial.includes("做到哪"), "an empty field drops its whole line");
-assert.ok(!partial.includes("别重做"));
-assert.ok(partial.includes("**下一步**：finish it"));
-assert.equal(partial.split("\n").filter((line) => line.startsWith("- ")).length, 2, "two bullets survive");
+assert.ok(!partial.includes("做到哪"), "an empty field drops its whole block");
+assert.ok(!partial.includes("不用重做"));
+assert.ok(partial.includes("接下来第一步：finish it"));
+assert.equal(partial.split("\n\n").length, 3, "header plus two fields survive");
+assert.ok(!partial.includes("\n\n\n"), "no doubled blank lines left behind");
 
 // The retired fallback still reads like a sentence when nothing was handed over.
 assert.equal(continuationText({ reason: "only reason" }, {}).includes("**下一步**"), false);

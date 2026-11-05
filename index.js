@@ -176,7 +176,7 @@ export function continuationText(pending, settings) {
     .trim();
   // Nothing to lay out (no fields in the template, nothing handed over): say so
   // in one line rather than delivering an empty message.
-  if (!rendered) return "🔄 DSH 已重启完成，继续未完成的工作。";
+  if (!rendered) return "DSH 刚重启好，继续没做完的部分。";
   return rendered.slice(0, 8000);
 }
 
