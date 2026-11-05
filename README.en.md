@@ -2,7 +2,7 @@
 
 <h1 align="center">dsh-restart-handoff</h1>
 
-<p align="center"><strong>When a change needs a restart, restart the host and hand the conversation back to the same session.</strong></p>
+<p align="center"><strong>An auto-restart plugin for DSH Desktop: when a change only takes effect after a restart, it restarts the host for you and hands "why we restarted, what to do next" back to the same session.</strong></p>
 
 <p align="center"><a href="README.md">简体中文</a> · <strong>English</strong></p>
 
@@ -14,241 +14,161 @@
   <a href="https://github.com/Saolence/dsh-restart-handoff/stargazers"><img alt="stars" src="https://img.shields.io/github/stars/Saolence/dsh-restart-handoff?style=flat-square"></a>
 </p>
 
+> A plain restart throws the work away: you close the window, reopen it, and explain where you left off.
+> This plugin keeps the missing half — **why the restart happened and what the first step is** — alive across the relaunch.
 
-<div align="center">
+## In one sentence
 
-> A plain restart throws the work away: the app closes, reopens, and you have to explain where you were all over again.
-> This plugin keeps the missing half alive across the relaunch — **why** the restart happened and **what to do next**.
->
-> *普通的「重启」只是关掉再打开：你正在做的事全没了，得从头解释一遍自己在哪一步。*
+After you change a plugin or install something, DSH says it needs a restart. Restarting by hand means closing the window, reopening it, remembering where you were, and re-typing the request.
 
-</div>
+This plugin fills that gap: it writes a hand-off note to disk before the restart, and the note arrives as the first message of the session afterwards, so the model picks up where it stopped.
 
-## The problem
+It does not modify your models and it never talks to the network — it only reads and writes a few state files on your own machine.
 
-After an agent edits plugin code, the host answers `application: "restart-required"` — the change only takes effect after a restart. So you quit the app, reopen it, remember what you were half way through, and type it again.
+## Three moments you will use it
 
-This plugin connects those three steps:
+**1. An agent changed plugin code**
 
-- **You don't have to remember** — the "what next" is written to disk before the restart and comes back as the session's next message;
-- **Your answer is never cut off** — the restart is parked until the current turn finishes and is delivered;
-- **No restart storms** — cooldown, attempt cap and a one-shot continuation; colliding requests still restart only once.
+The host answers `application: "restart-required"`. The plugin restarts by itself; a few seconds later you are back in the same session, with the hand-off note as the first message.
 
-## Three ways to start one
+**2. You know the change needs a restart**
 
-| Trigger | Who starts it | When it fires |
+Tell the model "restart when you're done". It calls the tool once, writes the hand-off while the context is fresh, then restarts.
+
+**3. You just want the new build now**
+
+Settings → "Restart handoff" → "Restart now". This one only restarts; it does not auto-resume.
+
+## What you see after a restart
+
+Not a fixed template — four lines the model writes, laid out by a template you control:
+
+```text
+## DSH restarted · 15:04
+
+- Why: the settings switches were invisible in dark mode
+
+- Done: switch background changed to a layer colour, two lines added to the docs
+
+- Next: refresh the window and check the switch is visible in dark mode
+
+- Don't redo: no need to run the tests again
+```
+
+If the model leaves a field empty, that whole line disappears — no "Next: (empty)".
+
+A one-line fallback appears only in three cases: the model wrote nothing, five minutes passed, or the session id could not be resolved. It reads: "DSH just restarted, carry on with what's left."
+
+## Four things it handles for you
+
+- **It does not cut off the answer in flight** — the restart waits until this turn is finished and its tool results are on disk.
+- **It waits for every window** — not just the current session: subagents and other windows count too.
+- **It will not loop** — at least 60 seconds between restarts; one resume per restart; a hand-off note is delivered at most three times.
+- **It says why when it refuses** — tapping restart inside the cooldown tells you "restarted just now, wait 42 more seconds" instead of pretending it started.
+
+## How it differs from restarting by hand
+
+| | Restart by hand | This plugin |
 | --- | --- | --- |
-| Automatic | the host watches `plugin_manager` tool results | the result says `restart-required` — the change can only take effect after a restart |
-| Tool | the agent calls `restart_handoff` | the agent knows what it just changed and writes its own hand-off |
-| Manual | Settings → 重启交接 (Restart handoff) → 现在重启 | you want a restart now (**this one does not resume**) |
+| When it happens | whenever you remember | after this turn ends and every window is idle |
+| Where you left off | you have to recall it | written to disk before the restart, shown right after |
+| Answer cut mid-sentence | possible | never |
+| Changing your mind | the app is already gone | cancel inside the 5-second countdown |
+| Restart loops | possible | 60-second cooldown, colliding requests restart once |
 
-When the two automatic paths collide, the later one stands down (log: `hand-off request dropped`); an already pending request answers `already-scheduled` / `already-deferred`.
+## FAQ
 
-## What arrives after the restart
+### Does a restart lose the conversation I am in the middle of?
 
-Not a template — a message **written by the model**. The plugin only carries it, verbatim:
+No. The plugin waits for the current turn to finish and its results to be written, then waits for every window to go idle, and only then starts a five-second countdown. Cancel during the countdown and nothing happens; if you miss it, the hand-off note is already on disk and returns to the same session after the relaunch.
 
-> 🔄 **DSH restarted itself, picking up where we stopped**
->
-> **What happened**: the trigger was `plugin-manager: host-module`; the previous turn ended after its answer was delivered (not a crash), so the context is intact.
->
-> **What to do next**: ① continue from where that sentence was cut: wire the new switch in `client.js`; ② first check whether the previous step was left half done.
+### Will it restart on its own again and again?
 
-Templates only cover three cases: no hand-off text, hand-off timed out (2 minutes), or no session id.
+No. There is a hard 60-second gap (`cooldownMs`) between restarts, and any request inside it is refused with the number of seconds left. An automatic request that gets refused is not dropped — it retries once the cooldown expires.
 
-## Install
+### Can I restart without the automatic resume?
 
-Requires the DSH **desktop** app (Electron). The host half relaunches the app, so a plain web or CLI host answers `status: "unsupported"`.
+Yes — turn off "Resume after restart". It then restarts only, delivers nothing, and waits for you to speak.
 
-**From the release tarball** (no npm account needed):
+### Can I change how the hand-off note looks?
 
-```
-plugin_manager: { action: "install_bundle", target: "/absolute/path/to/saolence-dsh-restart-handoff-0.1.0.tgz" }
-```
+Yes. The template editor at the bottom of the settings page re-renders a live preview as you type. The model only fills the fields (reason, progress, next, skip, plus session and time); layout comes entirely from your template. An empty template restores the built-in layout.
 
-**From npm** (once published):
+### Does it need network access? Where does my data go?
 
-```
-plugin_manager: { action: "install_bundle", target: "@saolence/dsh-restart-handoff" }
-```
+No network access at all — there are no outbound requests. State lives locally: `~/.dsh/restart-handoff/settings.json` (settings), `pending.json` (the note waiting to be delivered), `history.jsonl` (events), and `~/.dsh/restart-handoff.log` (log). Deleting that directory clears the record.
 
-**From a checkout**:
+### Does it work on Windows, Linux, or the web version?
 
-```
-plugin_manager: { action: "install_bundle", target: "/absolute/path/to/dsh-restart-handoff" }
-```
+No. It restarts DSH Desktop (Electron), so a plain web or CLI host answers "desktop only". It has only been verified on macOS so far.
 
-`package.json` declares `dsh.bundle.patch`, so the bundle's `cordis.patch.yml` inserts the `restart-handoff` entry automatically. Disabling it later:
+### Does it touch my login state?
 
-```
+One thing only: every launch leaves another `dsh-auth-*` row in Electron's cookie database, so the plugin keeps the newest and deletes the older ones (otherwise the request header grows until the server starts rejecting it). That is the only cookie-related file it touches, and it can be switched off in "More settings". Nothing else is read or changed.
+
+### How do I uninstall it?
+
+Disable or remove the plugin:
+
+```text
 plugin_manager: { action: "set_plugin", target: "include:restart-handoff", enabled: false }
 ```
 
-> ⚠️ **Editing this package does not hot-reload.** The profile links to it and HMR never sees the change; toggle the entry off/on (or restart once) after editing `index.js` / `client.js`.
+It stops listening and stops restarting. The files under `~/.dsh/restart-handoff/` can stay or be deleted.
 
-## Settings panel
+## Install
 
-Settings → 重启交接 (Restart handoff):
+Requires **DSH Desktop**. It shows up as "Restart handoff" in Settings once installed.
 
-> Naming: the settings section is 重启交接, the plugin list shows the package name `dsh-restart-handoff`, and the sidebar keeps the icon only.
+From a Release tarball (no npm account needed):
 
-One big card says what is going on right now — plain words, no jargon. Below it sit only the three switches that matter:
-
-- **Restart automatically when a change needs it** — on by default; watches `plugin_manager` results for `restart-required`;
-- **Wait until every task is done** — on by default; never cuts a running conversation, subagent or other window short;
-- **Continue automatically after the restart** — on by default; delivers the hand-off back into this conversation.
-
-**More settings** folds away the three you rarely touch: let the agent ask for a restart, finish the turn first, prune stale login records.
-
-Below those sits the **hand-off template**: it decides what the message you read after a restart looks like. The model only fills content (`{{reason}}`, `{{progress}}`, `{{next}}`, `{{skip}}`); the layout is the template's job. A line whose placeholder came back empty is dropped whole, so a partial hand-off never leaves a dangling "next: (empty)". `{{session}}` (first 8 characters of the session id) and `{{time}}` (the restart clock time) are also available. The box previews live as you type; on save the host re-validates the placeholders and refuses unknown names instead of storing them. An empty template means the built-in layout.
-**Restart now** on the card needs a second click to confirm and does not resume; while counting down or queued the same spot offers **not now**.
-
-Just **above the account row** at the sidebar foot sits an **icon-only** circular button (`↻`, the same 24px muted chip and 12px radius as the account row icon) with no "重启" text — the wording only appears on hover. A click opens a small yes / no popover; after yes the button turns amber and counts down three seconds with a tiny progress ring beside it, then restarts — clicking again during those seconds cancels. While a restart is queued or already scheduled, the ring (a pause glyph when queued) appears and a click cancels.
-
-Settings live in `~/.dsh/restart-handoff/settings.json`, events in `history.jsonl`, the full log in `~/.dsh/restart-handoff.log`.
-
-## The full path of one restart
-
-```
-a change needs a restart
-      │
-      ├── automatic: the host sees restart-required → asks the model (steer)
-      │              "write the hand-off, then call restart_handoff"
-      │              └── no answer in 2 minutes: restart with a one-line note
-      └── tool: the agent calls restart_handoff({ reason, progress, next, skip })
-      │
-      ▼
-park the request    pending.json ← { sessionId, reason, progress, next, skip, requestedAt, attempts }
-      ▼
-wait until every session is idle    another session mid-answer holds it (gate.json, refreshed each second)
-      ▼
-1.5 s countdown (cancelable) → detached sh helper
-      │   re-read gate.json (up to 900 s if someone started again) · write exit.json once the app is really gone
-      │   quit the app · clear singleton locks · prune stale login cookies · open -n
-      │   verify the new main process is alive
-      ▼
-new host boots, plugin loads: compares exit.json / boot.json (planned restart vs unexpected exit)
-      ▼
-2.5 s later: resolveAgent(sessionId) → prompt({ mode: "queue", content: [hand-off] }) → delete pending.json
-      ▼
-the same session's next message is that hand-off
+```text
+plugin_manager: { action: "install_bundle", target: "/absolute/path/saolence-dsh-restart-handoff-0.2.0.tgz" }
 ```
 
-## Who it waits for
+From npm (once published):
 
-Waiting for the current turn is not enough: another session may be writing an answer, and killing the host for it would swallow that answer. So the plugin keeps a list of sessions that are running right now:
-
-- `api-session/status` and `agent/status` both feed that list;
-- while it is non-empty the parked restart does not start counting down — the panel says "waiting for N sessions to finish";
-- the moment the list empties, the 1.5 s countdown starts;
-- `performRestart` checks once more: a session that started in between postpones the restart by 2 s, at most 60 times;
-- the helper checks a **third** time right before touching the app: it reads `busy`, `waitAll` and `at` from `gate.json` (older than 8 s counts as "host is gone, not busy") and polls every 0.5 s for up to 900 s, the same 15-minute cap the host uses; with `waitAll: false` it stops waiting altogether.
-
-If the old app cannot be killed, the helper gives up on this restart (`could not stop the old app; aborting the restart`): it writes no `exit.json` and starts no second copy — a later boot reports an unexpected exit rather than a clean restart that never happened.
-
-Turning "wait for all sessions" off in the panel falls back to the old behaviour: only the asking session matters.
-
-## Who may start one: the main session only
-
-Restarting the host interrupts every turn in flight, so the decision sits with the main session — the one the human is looking at:
-
-- **a subagent, child session, or teammate calling `restart_handoff` is refused** with `status: "not-root"`: nothing is queued and nothing restarts. It should carry "this change needs a restart" back in its result or a message.
-- the automatic trigger follows the same rule: a `restart-required` verdict from a child session is only logged (`restart-refused` in `history.jsonl`), never acted on; the main session sees the child's result and decides.
-- **a main-session call while other agents/sessions are still running is not refused**: the restart waits until every session is idle (subagents, teammates and conversations in other windows included), then restarts and delivers the hand-off. The caller just ends its turn — no need to ask again. A 15-minute cap still restarts even if idle events were missed.
-- two signals decide "child": the Session header (`origin: "subagent"` / `parentSession`) and the Agent registry's ownership chain (`isOwnedBy`). Both must say "root" for the tool to proceed.
-- dead entries in the running set are pruned against the Agent registry, but only after **5 seconds** of continuous absence (a plugin reload briefly hides live sessions), so one bad reading cannot pin the restart until the 15-minute cap.
-
-The panel button and the automatic trigger are exempt: a human pressed one, and the other belongs to the main session itself. `waitForAllSessions` still applies to them.
-
-## Tool: `restart_handoff`
-
-```json
-{
-  "reason": "swapped the sidebar plugin",
-  "progress": "the panel is wired to the new slots, tests not run yet",
-  "next": "run npm test, then check the settings pane for errors",
-  "skip": "no need to touch the client.js styles again",
-  "delay_ms": 1500
-}
+```text
+plugin_manager: { action: "install_bundle", target: "@saolence/dsh-restart-handoff" }
 ```
 
-`reason` is one line; the other three should be concrete enough to act on: `progress` is where this round stopped, `next` is the first step after the restart, `skip` is the work that must not be repeated. Layout is not the model's business — that is the template in Settings.
+> Editing this package does **not** hot-reload: the profile points at it through a symlink, so HMR never hears about the change. Toggle the plugin off and on (or restart once) after editing.
 
-It returns immediately — it neither blocks nor waits for the restart:
+## What the settings page contains
 
-| Result | Meaning |
-| --- | --- |
-| `deferred` | parked; the restart happens after this turn ends |
-| `scheduled` | the countdown is already running |
-| `already-deferred` / `already-scheduled` | one request is already pending |
-| `not-root` | the caller is a subagent/child session: no restart rights |
-| `cooldown` / `disabled` / `unsupported` | cooling down / turned off / not a desktop host |
+Settings → "Restart handoff". The line at the top says what is happening right now; when something is pending it turns into a countdown or "waiting for you to finish".
 
-The "restart finished" result never arrives through this tool — **the proof of completion is the hand-off itself**, which arrives as the next message in the session.
+Three everyday switches:
 
-`next_step` and the free-text `continuation` are both gone: passing either is rejected by the schema (`additionalProperties: false`), and a pending file left by an older build is deleted on the next boot instead of delivered.
+- **Restart for me when a change needs it** (on by default)
+- **Wait for every task to finish** (on by default)
+- **Resume after restart** (on by default)
 
-## Files it writes
+"More settings" holds three more: let the model request a restart, act after this turn ends, and prune stale login cookies.
 
-```
-~/.dsh/restart-handoff/
-├── pending.json     # survives the restart; deleted once the hand-off is delivered
-├── settings.json    # created on first change; missing file = defaults
-├── gate.json        # refreshed every second while alive: is any session running (the helper reads it)
-├── exit.json        # written by the helper only after the old app is gone: "this exit is a planned restart"
-├── boot.json        # written on every boot: pid + time, to judge the previous exit
-├── last-restart.json # when the last restart actually happened: keeps the cooldown across boots
-└── history.jsonl    # append-only event log for the panel (trimmed to the last 400 lines past 512 KB)
-~/.dsh/restart-handoff.log   # full text log, including the helper script's own output
-```
+Above the account row in the sidebar there is a round button: `↻` when idle, a pause glyph while queued, remaining seconds during a countdown. Click it to restart now or cancel.
 
-## Known boundaries
+## Known limits
 
-- **The tool only shows up in new sessions.** Which tools a session can call is fixed when that session is created. If the plugin was installed afterwards — or the host was restarted since — an already-open session never gets `restart_handoff`, and restarting the host does not refresh it. Open a new chat to use the tool; older sessions can still restart from the panel or the automatic trigger.
-- **Desktop only.** Other hosts get `status: "unsupported"`.
-- **macOS only for now**: the restart helper is a `/bin/sh` script that quits the app with `osascript` and reopens it with `open -n`.
-- A restart still kills whatever step was running — a shell command cannot be resumed, only re-run. The hand-off says *where to pick up*, not *what was in flight*.
-- **The GUI port can change** across restarts; use the address the app prints, not a bookmark.
-- The manual "Restart now" button never resumes: no pending record is written.
-- The cooldown timestamp is persisted in `last-restart.json`, so it survives restarts; `pending.json` also carries the attempt count and a 10 minute TTL, so a crash loop cannot go on forever.
-- "All sessions idle" relies on the statuses the host reports; something invisible to those statuses (an external script killing the process) is not held back.
-- Login-cookie pruning keeps only the newest `dsh-auth-*`: if the app ever depends on several scoped sessions, turn the switch off.
-- An unexpected exit is judged by the pid in `boot.json`: a crash that happened while the plugin was disabled is reported once, not blamed.
+- It restarts the host only, not other processes on your machine.
+- A manual restart does not auto-resume — you are right there anyway.
+- A hand-off note is valid for one restart; undelivered after ten minutes, it expires.
+- The Web GUI needs a tokenised URL to open; the plugin does not touch that.
 
-## Development
+## For developers
+
+The details live in the source: `index.js` (host logic), `client.js` (UI), `lib/state.js` (settings and state files), `test/` (smoke / boot / client-contract, via `npm test`).
+
+The UI has an offline preview harness that needs no host:
 
 ```bash
-node --check index.js && node --check client.js
-node test/smoke.mjs          # state round-trip + helper script assertions, no Harness needed
-```
-
-Panel preview without installing anything (a tiny React stand-in plus a static page):
-
-```bash
-cd test/preview && cp ../../client.js . && python3 -m http.server 8781
+cp client.js test/preview/client.js
+python3 -m http.server 8781 --directory test/preview
 # open http://127.0.0.1:8781/preview.html?s=idle
 ```
 
-`s` is one of `idle` / `countdown` / `waiting` / `handoff` / `empty`.
-
-## Layout
-
-```
-.
-├── index.js             # host: scheduling, tool, post-execute watcher, HTTP routes
-├── client.js            # settings panel (__ModuleLoader__ + settings.section)
-├── lib/relaunch.js      # sh helper: quit → clear locks → open -n → confirm alive
-├── lib/state.js         # pending / settings / history / log
-├── cordis.patch.yml     # one insert entry
-├── locale/{en,zh}.json  # name and blurb in the plugin list
-├── icon.svg
-└── test/                # smoke test + panel preview harness
-```
+Parameters: `s=idle|countdown|waiting|handoff|empty` for scenarios, `theme=dark` for the dark theme, `slot=sidebar.footer.action` to preview the sidebar button.
 
 ## License
 
-MIT
-
----
-
-[简体中文](README.md) · **English**
+MIT, see [LICENSE](LICENSE). Current version 0.2.0.
