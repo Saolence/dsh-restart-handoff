@@ -127,10 +127,8 @@ One thing only: every launch leaves another `dsh-auth-*` row in Electron's cooki
 
 ### How do I uninstall it?
 
-Disable or remove the plugin:
-
-```text
-plugin_manager: { action: "set_plugin", target: "include:restart-handoff", enabled: false }
+```bash
+dsh plugin --profile desktop remove @saolence/dsh-restart-handoff
 ```
 
 It stops listening and stops restarting. The files under `~/.dsh/restart-handoff/` can stay or be deleted.
@@ -139,18 +137,12 @@ It stops listening and stops restarting. The files under `~/.dsh/restart-handoff
 
 Requires **DSH Desktop**. It shows up as "Restart handoff" in Settings once installed.
 
-From a Release tarball (no npm account needed):
-
-```text
-plugin_manager: { action: "install_bundle", target: "/absolute/path/saolence-dsh-restart-handoff-0.1.0.tgz" }
+```bash
+dsh plugin --profile desktop add @saolence/dsh-restart-handoff
 ```
 
-From npm (once published):
-
-```text
-plugin_manager: { action: "install_bundle", target: "@saolence/dsh-restart-handoff" }
-```
-
+> It has to be the `desktop` profile: the plugin restarts the desktop app, so installing into `web` does nothing.
+>
 > Editing this package does **not** hot-reload: the profile points at it through a symlink, so HMR never hears about the change. Toggle the plugin off and on (or restart once) after editing.
 
 ## What the settings page contains

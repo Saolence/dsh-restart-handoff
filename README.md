@@ -127,30 +127,22 @@
 
 ### 怎么卸载？
 
-把插件停用或移除即可：
-
-```text
-plugin_manager: { action: "set_plugin", target: "include:restart-handoff", enabled: false }
+```bash
+dsh plugin --profile desktop remove @saolence/dsh-restart-handoff
 ```
 
-停用后不再监听、不再重启；`~/.dsh/restart-handoff/` 里的记录可以留着，也可以删掉。
+卸掉后不再监听、不再重启；`~/.dsh/restart-handoff/` 里的记录可以留着，也可以删掉。
 
 ## 安装
 
-前提：**DSH 桌面版**。装完它会自动出现在设置页的「重启交接」里。
+前提：**DSH 桌面版**。装完它会出现在设置页的「重启交接」里。
 
-从 Release 的 tarball 装（不需要 npm 账号）：
-
-```text
-plugin_manager: { action: "install_bundle", target: "/绝对路径/saolence-dsh-restart-handoff-0.1.0.tgz" }
+```bash
+dsh plugin --profile desktop add @saolence/dsh-restart-handoff
 ```
 
-或者从 npm 装（发布后）：
-
-```text
-plugin_manager: { action: "install_bundle", target: "@saolence/dsh-restart-handoff" }
-```
-
+> 必须是 `desktop` 这个 profile：它重启的是桌面 App，装进 `web` 不生效。
+>
 > 改这个包**本身**不会热重载：profile 里指向它的是符号链接，HMR 收不到通知，改完要停用再启用一次（或重启一次）才生效。
 
 ## 设置里有什么
