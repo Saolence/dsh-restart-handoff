@@ -128,7 +128,8 @@
 ### 怎么卸载？
 
 ```bash
-dsh plugin --profile desktop remove @saolence/dsh-restart-handoff
+dsh plugin --profile desktop remove @saolence/dsh-restart-handoff   # 桌面版
+dsh plugin --profile web remove @saolence/dsh-restart-handoff       # dsh web
 ```
 
 卸掉后不再监听、不再重启；`~/.dsh/restart-handoff/` 里的记录可以留着，也可以删掉。
@@ -184,7 +185,7 @@ dsh plugin --profile web add @saolence/dsh-restart-handoff
 
 ## 开发者
 
-细节都在源码里，这里只留入口：`index.js`（宿主逻辑）、`client.js`（界面）、`lib/state.js`（设置与状态文件）、`test/`（smoke / boot / client-contract 三组测试，`npm test`）。
+细节都在源码里，这里只留入口：`index.js`（宿主逻辑）、`client.js`（界面）、`lib/state.js`（设置与状态文件）、`test/`（smoke / boot / client-contract / cli-relaunch 四组测试，`npm test`）。
 
 改界面时有离线预览台，不依赖宿主：
 

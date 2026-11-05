@@ -128,7 +128,8 @@ One thing only: every launch leaves another `dsh-auth-*` row in Electron's cooki
 ### How do I uninstall it?
 
 ```bash
-dsh plugin --profile desktop remove @saolence/dsh-restart-handoff
+dsh plugin --profile desktop remove @saolence/dsh-restart-handoff   # desktop app
+dsh plugin --profile web remove @saolence/dsh-restart-handoff       # dsh web
 ```
 
 It stops listening and stops restarting. The files under `~/.dsh/restart-handoff/` can stay or be deleted.
