@@ -984,7 +984,7 @@ window.__ModuleLoader__.load({
         tone = "warn";
         heroTitle = handoff.active ? "正在写「回来做什么」" : "等你忙完再重启";
         heroSub = handoff.active
-          ? "我会先把「刚才做到哪、接着做什么」记下来，最多等 2 分钟。"
+          ? "我会先把「刚才做到哪、接着做什么」记下来，最多等 " + Math.max(1, Math.round((status && status.handoffWindowMs ? status.handoffWindowMs : 120000) / 60000)) + " 分钟。"
           : busyCount > 1
             ? "还有 " + busyCount + " 个任务在跑，等它们都结束我再动手。"
             : "这一轮说完就重开，不会把你的回复切一半。";

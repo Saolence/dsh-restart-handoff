@@ -59,7 +59,10 @@ const RESUME_RETRY_BACKOFF_MS = 2 * 60 * 1000;
 const TOOL_RESTART_DELAY_MS = 1500;
 const DEFER_FALLBACK_MS = 15 * 60 * 1000;
 /** How long the model gets to author its own hand-off text before the fallback. */
-const HANDOFF_WINDOW_MS = 2 * 60 * 1000;
+// How long the model gets to write the hand-off before the restart goes ahead
+// with the one-line fallback. Long enough for a slow model to answer, short
+// enough that a wedged session does not hold the restart hostage.
+const HANDOFF_WINDOW_MS = 5 * 60 * 1000;
 // A deferred restart already waited for the turn to close, so its cancel window
 // only needs to cover a mis-click, not a whole answer.
 const DEFERRED_GRACE_MS = 1500;
@@ -387,7 +390,7 @@ export function apply(ctx) {
       "交接话请你自己填：调用 `restart_handoff`，传 `progress`（这一轮做到哪）、`next`（重启后第一步做什么）、`skip`（哪些不用重做），`reason` 写为什么重启。",
       "排版不用你操心：插件会按用户设置的模板把这几项摆好，空着的那项整行不显示。",
       "",
-      "这段时间是留给你写交接话的：2 分钟内没有调用工具，插件就发一句「已重启，继续未完成的工作」照常重启（重启本身不会因为没人写而取消）。",
+      `这段时间是留给你写交接话的：${Math.round(HANDOFF_WINDOW_MS / 60000)} 分钟内没有调用工具，插件就发一句「已重启，继续未完成的工作」照常重启（重启本身不会因为没人写而取消）。`,
     ].join("\n");
   }
 
@@ -1056,6 +1059,9 @@ export function apply(ctx) {
     // renderer: the built-in default, plus a sample rendered with fake fields.
     defaultTemplate: DEFAULT_CONTINUATION_TEMPLATE,
     templateFields: TEMPLATE_FIELDS,
+    // The panel quotes this instead of hard-coding "2 分钟", so raising the
+    // window never leaves stale copy on screen.
+    handoffWindowMs: HANDOFF_WINDOW_MS,
     preview: continuationText(
       {
         reason: "示例：改完了一个插件",

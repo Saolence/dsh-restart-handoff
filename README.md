@@ -53,7 +53,7 @@ Agent 改完插件代码，宿主会回一句 `application: "restart-required"`�
 >
 > **接下来怎么做**：① 从这句话中断的地方继续：把 `client.js` 的新开关接上；② 先确认上一步有没有只做了一半。
 
-兜底只在三种情况下出场：没给交接话、交接超时（2 分钟）、拿不到会话 id——而且兜底只有一句话：`DSH 刚重启好，继续没做完的部分。`
+兜底只在三种情况下出场：没给交接话、交接超时（5 分钟）、拿不到会话 id——而且兜底只有一句话：`DSH 刚重启好，继续没做完的部分。`
 
 ## 安装
 
@@ -116,7 +116,7 @@ plugin_manager: { action: "set_plugin", target: "include:restart-handoff", enabl
       │
       ├── 自动：宿主看到 restart-required → 用 steer 问模型
       │        「写交接话，然后调 restart_handoff」
-      │        └── 2 分钟没回音：发一句提示照常重启
+      │        └── 5 分钟没回音：发一句提示照常重启
       └── 工具：agent 调 restart_handoff({ reason, progress, next, skip })
       │
       ▼
