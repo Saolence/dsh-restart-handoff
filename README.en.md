@@ -185,7 +185,7 @@ Above the account row in the sidebar there is a round button: `↻` when idle, a
 
 ## For developers
 
-The details live in the source: `index.js` (host logic), `client.js` (UI), `lib/state.js` (settings and state files), `test/` (smoke / boot / client-contract, via `npm test`).
+The details live in the source: `index.js` (host logic), `client.js` (UI), `lib/state.js` (settings and state files), `test/` (smoke / boot / client-contract / cli-relaunch, via `npm test`).
 
 The UI has an offline preview harness that needs no host:
 
