@@ -140,22 +140,22 @@ const full = {
   requestedAt: new Date(2026, 10, 5, 9, 7).getTime(),
 };
 const rendered = continuationText(full, {});
-assert.ok(rendered.startsWith("DSH 刚重启好（09:07）。"), rendered);
-assert.ok(rendered.includes("起因：rationale"), rendered);
-assert.ok(rendered.includes("做到哪了：halfway"), rendered);
-assert.ok(rendered.includes("接下来第一步：finish it"), rendered);
-assert.ok(rendered.includes("不用重做：the tests"), rendered);
-// Plain prose, not Markdown: no bold, no bullets, and every block separated by a
-// blank line so renderers keep the breaks a human would expect.
-assert.ok(!/[*_`]|^- /m.test(rendered), `default hand-off must stay unformatted: ${rendered}`);
-assert.equal(rendered.split("\n\n").length, 5, "five blocks: header plus four fields");
+assert.ok(rendered.startsWith("## DSH 已重启完成 · 09:07"), rendered);
+assert.ok(rendered.includes("- 起因：rationale"), rendered);
+assert.ok(rendered.includes("- 做到哪了：halfway"), rendered);
+assert.ok(rendered.includes("- 接下来第一步：finish it"), rendered);
+assert.ok(rendered.includes("- 不用重做：the tests"), rendered);
+// Structure is fine, asterisks are not: a heading and dashes still read as
+// Markdown, while `*` shows up raw in some renderers and looks like source code.
+assert.ok(!rendered.includes("*"), `default hand-off must not contain an asterisk: ${rendered}`);
+assert.equal(rendered.split("\n\n- ").length - 1, 4, "each bullet starts a loose-list block");
 
 // A missing field takes its label with it, so no empty "接下来第一步：" is delivered.
 const partial = continuationText({ ...full, progress: "", skip: "" }, {});
 assert.ok(!partial.includes("做到哪"), "an empty field drops its whole block");
 assert.ok(!partial.includes("不用重做"));
-assert.ok(partial.includes("接下来第一步：finish it"));
-assert.equal(partial.split("\n\n").length, 3, "header plus two fields survive");
+assert.ok(partial.includes("- 接下来第一步：finish it"));
+assert.equal(partial.split("\n\n- ").length - 1, 2, "two bullets survive");
 assert.ok(!partial.includes("\n\n\n"), "no doubled blank lines left behind");
 
 // The retired fallback still reads like a sentence when nothing was handed over.
