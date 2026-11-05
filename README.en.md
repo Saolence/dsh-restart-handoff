@@ -123,7 +123,7 @@ Requires **DSH Desktop**. It shows up as "Restart handoff" in Settings once inst
 From a Release tarball (no npm account needed):
 
 ```text
-plugin_manager: { action: "install_bundle", target: "/absolute/path/saolence-dsh-restart-handoff-0.2.0.tgz" }
+plugin_manager: { action: "install_bundle", target: "/absolute/path/saolence-dsh-restart-handoff-0.1.0.tgz" }
 ```
 
 From npm (once published):
@@ -171,4 +171,4 @@ Parameters: `s=idle|countdown|waiting|handoff|empty` for scenarios, `theme=dark`
 
 ## License
 
-MIT, see [LICENSE](LICENSE). Current version 0.2.0.
+MIT, see [LICENSE](LICENSE). Current version 0.1.0.

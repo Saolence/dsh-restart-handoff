@@ -1,6 +1,6 @@
 {
   "name": "@saolence/dsh-restart-handoff",
-  "version": "0.2.0",
+  "version": "0.1.0",
   "description": "Restart the DSH desktop host when a change requires it, then hand the conversation back to the same session.",
   "keywords": [
     "dsh",

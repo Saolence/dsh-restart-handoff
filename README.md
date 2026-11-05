@@ -123,7 +123,7 @@ plugin_manager: { action: "set_plugin", target: "include:restart-handoff", enabl
 从 Release 的 tarball 装（不需要 npm 账号）：
 
 ```text
-plugin_manager: { action: "install_bundle", target: "/绝对路径/saolence-dsh-restart-handoff-0.2.0.tgz" }
+plugin_manager: { action: "install_bundle", target: "/绝对路径/saolence-dsh-restart-handoff-0.1.0.tgz" }
 ```
 
 或者从 npm 装（发布后）：
@@ -171,4 +171,4 @@ python3 -m http.server 8781 --directory test/preview
 
 ## 许可
 
-MIT，见 [LICENSE](LICENSE)。当前版本 0.2.0。
+MIT，见 [LICENSE](LICENSE)。当前版本 0.1.0。
