@@ -209,6 +209,7 @@ window.__ModuleLoader__.load({
 
 .rhs-msg { font-size: 12px; line-height: 18px; color: var(--dsw-alias-label-secondary, inherit); }
 .rhs-msg[data-tone="error"] { color: var(--dsw-alias-state-error-primary, #cf3b3b); }
+.rhs-msg[data-tone="warn"] { color: var(--dsw-alias-state-warn-primary, #b07a1d); }
 
 /* History. */
 .rhs-log { display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none; }
@@ -328,6 +329,22 @@ window.__ModuleLoader__.load({
       if (diff < 24 * 60 * 60 * 1000) return Math.round(diff / 3600000) + " 小时前";
       const date = new Date(Number(ms));
       return two(date.getMonth() + 1) + "-" + two(date.getDate()) + " " + two(date.getHours()) + ":" + two(date.getMinutes());
+    }
+
+    // The server answers a restart it refuses instead of failing the request, so
+    // every entry point has to read the status before it claims anything.
+    function describeRefusal(value) {
+      const status = value && value.status;
+      if (!status || status === "scheduled") return "";
+      if (status === "cooldown") {
+        const wait = Math.max(1, Math.ceil(Number(value.retryInMs) / 1000));
+        return "刚重启过，再等 " + wait + " 秒";
+      }
+      if (status === "already-scheduled") return "已经排好了，稍等就行";
+      if (status === "already-deferred") return "已经排好了，这一轮答完就重开";
+      if (status === "unsupported") return "只能在桌面版里重启";
+      if (status === "disabled") return "自动重启已关掉，先打开它";
+      return "";
     }
 
     function fullClock(ms) {
@@ -565,6 +582,9 @@ window.__ModuleLoader__.load({
       const [busy, setBusy] = React.useState(false);
       const [anchor, setAnchor] = React.useState(null);
       const [gone, setGone] = React.useState(false);
+      // A tap the server refused (cooldown, already queued) has nowhere to print
+      // a message, so the chip itself says how long is left for a moment.
+      const [flash, setFlash] = React.useState("");
       const [, tick] = React.useReducer((x) => x + 1, 0);
       const alive = React.useRef(true);
       const bootPid = React.useRef(null);
@@ -679,7 +699,12 @@ window.__ModuleLoader__.load({
         setBusy(true);
         setArmUntil(0);
         try {
-          await post("restart", { reason: "账号页圆环手动重启" });
+          const value = await post("restart", { reason: "账号页圆环手动重启" });
+          const refused = describeRefusal(value);
+          if (refused) {
+            setFlash(String(Math.max(1, Math.ceil(Number(value && value.retryInMs) / 1000))) + "s");
+            return;
+          }
           hideRing();
         } catch {
           // The shell may already be on its way down; nothing to undo.
@@ -725,6 +750,12 @@ window.__ModuleLoader__.load({
       }
 
       React.useEffect(() => {
+        if (!flash) return undefined;
+        const id = setTimeout(() => setFlash(""), 2400);
+        return () => clearTimeout(id);
+      }, [flash]);
+
+      React.useEffect(() => {
         if (!armed) return undefined;
         const id = setInterval(() => {
           if (armUntil - Date.now() <= 0) {
@@ -746,7 +777,9 @@ window.__ModuleLoader__.load({
             : waiting
               ? "重启已排队，点一下取消"
               : "点一下手动重启";
-      const glyph = !desktop
+      const glyph = flash
+        ? flash
+        : !desktop
         ? "—"
         : armed
           ? Math.ceil(armMs / 1000) + "s"
@@ -755,7 +788,7 @@ window.__ModuleLoader__.load({
             : countdown.active
               ? seconds + "s"
               : "↻";
-      const tone = ask ? "error" : armed || waiting || countdown.active ? "warn" : "idle";
+      const tone = ask ? "error" : flash || armed || waiting || countdown.active ? "warn" : "idle";
       const progress = armed
         ? (armMs / 3000) * 100
         : countdown.active
@@ -778,7 +811,7 @@ window.__ModuleLoader__.load({
           "span",
           {
             className: "rh-chip",
-            "data-progress": String(armed || countdown.active),
+            "data-progress": String(!flash && (armed || countdown.active)),
             "data-paused": String(waiting && !armed && !countdown.active),
             style: { "--rh-progress": progress + "%" },
           },
@@ -930,7 +963,13 @@ window.__ModuleLoader__.load({
         setAskConfirm(false);
         setBusy(true);
         try {
-          await post("restart", { reason: "面板手动重启" });
+          const value = await post("restart", { reason: "面板手动重启" });
+          const blocked = describeRefusal(value);
+          if (blocked) {
+            // Waiting is not a failure: amber, not red.
+            setMessage({ tone: "warn", text: blocked });
+            return;
+          }
           setMessage({ tone: "ok", text: "正在重开，稍等几秒…" });
         } catch (cause) {
           setMessage({ tone: "error", text: "重启失败：" + String((cause && cause.message) || cause) });

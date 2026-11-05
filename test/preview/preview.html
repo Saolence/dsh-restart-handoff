@@ -64,7 +64,7 @@
 <body>
 <div id="root"></div>
 <script type="module">
-import { createElement, mount } from "./mini-react.js?v=5";
+import { createElement, mount } from "./mini-react.js?v=7";
 
 const params = new URLSearchParams(location.search);
 if (params.get("theme") === "dark") document.documentElement.dataset.theme = "dark";
@@ -121,6 +121,9 @@ window.fetch = async (url) => {
     ok: true,
     json: async () => {
       dbg.steps.push("json:" + String(url));
+      if (String(url).includes("/restart") && params.get("post") === "cooldown") {
+        return { ok: true, scope: "restart", status: "cooldown", retryInMs: 42000 };
+      }
       if (!String(url).includes("status")) return { ok: true, settings: window.__SCENARIO__.settings };
       const live = Object.assign({}, window.__SCENARIO__);
       if (live.countdown && live.countdown.active) {
@@ -147,7 +150,7 @@ window.__ModuleLoader__ = {
 // client.js 是普通脚本，直接 eval 到 window 上，方便拿到 __ModuleLoader__.load
 </script>
 <script type="module">
-import { createElement, Fragment, mount, useState, useReducer, useRef, useEffect, useCallback, useMemo } from "./mini-react.js?v=5";
+import { createElement, Fragment, mount, useState, useReducer, useRef, useEffect, useCallback, useMemo } from "./mini-react.js?v=7";
 const React = { createElement, Fragment, useState, useReducer, useRef, useEffect, useCallback, useMemo };
 const params = new URLSearchParams(location.search);
 let captured = null;
