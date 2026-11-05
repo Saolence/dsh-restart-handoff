@@ -17,6 +17,8 @@
 import { isChildAgent } from "./lib/access.js";
 import { appPath, launchRelaunch, notify } from "./lib/relaunch.js";
 import {
+  DEFAULT_CONTINUATION_TEMPLATE,
+  TEMPLATE_FIELDS,
   appendHistory,
   appendLog,
   clearExit,
@@ -24,12 +26,15 @@ import {
   gateFile,
   logPath,
   markShutdown,
+  parseTemplate,
   readBoot,
   readExit,
   readHistory,
   readLastRestart,
   readPending,
   readSettings,
+  templateFields,
+  validateTemplate,
   writeBoot,
   writeGate,
   writeLastRestart,
@@ -135,17 +140,60 @@ function restartVerdictOf(result) {
   return RESTART_REQUIRED_TEXT.test(text) ? { restartReason: undefined } : null;
 }
 
-export function continuationText(pending) {
-  // The agent that asked for the restart usually writes the hand-off message
-  // itself (`restart_handoff({ continuation })`); deliver it verbatim.
-  const authored = String(pending.continuation || "").trim();
-  if (authored) return authored.slice(0, 8000);
-  // Fallback is deliberately one plain line: no fabricated narrative about
-  // what was or was not in flight, just a nudge back to work.
-  const reason = String(pending.reason || "").trim();
-  return reason
-    ? `🔄 DSH 已重启完成（${reason}），继续未完成的工作。`
-    : "🔄 DSH 已重启完成，继续未完成的工作。";
+/**
+ * Render the hand-off the user is about to read. The model supplies structured
+ * fields; the layout comes from the template in Settings.
+ *
+ * Line rule: if a line mentions a placeholder whose field is empty, the whole
+ * line disappears. That is what keeps an unfinished hand-off from showing a
+ * dangling "**下一步**：（空）" — the label goes with the missing value.
+ */
+export function continuationText(pending, settings) {
+  const configured = String(settings?.continuationTemplate || "").trim();
+  const template = configured || DEFAULT_CONTINUATION_TEMPLATE;
+  const fields = {
+    reason: cleanField(pending?.reason),
+    progress: cleanField(pending?.progress),
+    next: cleanField(pending?.next),
+    skip: cleanField(pending?.skip),
+    session: String(pending?.sessionId || "").slice(0, 8),
+    time: formatClock(pending?.requestedAt ?? Date.now()),
+  };
+  const rendered = template
+    .split("\n")
+    .filter((line) => {
+      const used = templateFields(line);
+      // A line without placeholders is static copy: keep it as written.
+      return used.every((field) => (fields[field] ?? "") !== "");
+    })
+    .map((line) =>
+      line.replace(/\{\{\s*([a-zA-Z_]+)\s*\}\}/g, (_match, field) => fields[field] ?? ""),
+    )
+    .map((line) => line.replace(/[ \t]+$/u, ""))
+    .join("\n")
+    // Collapse the blank-line runs a dropped field can leave behind.
+    .replace(/\n{3,}/gu, "\n\n")
+    .trim();
+  // Nothing to lay out (no fields in the template, nothing handed over): say so
+  // in one line rather than delivering an empty message.
+  if (!rendered) return "🔄 DSH 已重启完成，继续未完成的工作。";
+  return rendered.slice(0, 8000);
+}
+
+function cleanField(value) {
+  return String(value ?? "").replace(/\s+/gu, " ").trim();
+}
+
+/** Did the model hand over anything worth reading after the restart? */
+export function hasHandoff(plan) {
+  return Boolean(cleanField(plan?.progress) || cleanField(plan?.next) || cleanField(plan?.skip));
+}
+
+function formatClock(ms) {
+  const date = new Date(Number(ms));
+  if (Number.isNaN(date.getTime())) return "";
+  const two = (n) => String(n).padStart(2, "0");
+  return `${two(date.getHours())}:${two(date.getMinutes())}`;
 }
 
 export function apply(ctx) {
@@ -290,7 +338,7 @@ export function apply(ctx) {
       restartAt,
       delayMs: delay,
       reason: plan.reason,
-      hasContinuation: Boolean(plan.continuation),
+      hasContinuation: hasHandoff(plan),
     };
   }
 
@@ -336,8 +384,8 @@ export function apply(ctx) {
       "[restart-handoff] 刚才的改动需要重启宿主才能生效。",
       `原因：${reason}`,
       "",
-      "请你自己写这段交接话：调用 `restart_handoff`，把 `continuation` 写成重启后的你要读的那段话。",
-      "建议写清：为什么重启、这一轮做到哪、重启后第一步做什么、哪些不用重做。结构由你决定，插件会原样投递。",
+      "交接话请你自己填：调用 `restart_handoff`，传 `progress`（这一轮做到哪）、`next`（重启后第一步做什么）、`skip`（哪些不用重做），`reason` 写为什么重启。",
+      "排版不用你操心：插件会按用户设置的模板把这几项摆好，空着的那项整行不显示。",
       "",
       "这段时间是留给你写交接话的：2 分钟内没有调用工具，插件就发一句「已重启，继续未完成的工作」照常重启（重启本身不会因为没人写而取消）。",
     ].join("\n");
@@ -451,7 +499,7 @@ export function apply(ctx) {
       ...result,
       mustStopNow: true,
       waitFor: "turn-end",
-      note: "重启发生在这一回合结束、回答送达之后。现在停止：不要再调用工具，也不要开始新任务；重启后要做的第一件事写在 continuation 里。",
+      note: "重启发生在这一回合结束、回答送达之后。现在停止：不要再调用工具，也不要开始新任务；重启后要做的第一件事写在 next 里。",
     };
   }
 
@@ -505,7 +553,9 @@ export function apply(ctx) {
     const plan = {
       reason: String(request.reason || "restart requested").slice(0, 500),
       sessionId: typeof request.sessionId === "string" ? request.sessionId : undefined,
-      continuation: String(request.continuation || "").slice(0, 8000),
+      progress: cleanField(request.progress).slice(0, 2000),
+      next: cleanField(request.next).slice(0, 2000),
+      skip: cleanField(request.skip).slice(0, 2000),
       requestedAt: Date.now(),
     };
     const settings = readSettings();
@@ -539,7 +589,7 @@ export function apply(ctx) {
       reason: plan.reason,
       // Report the grace that will actually be used, not the (longer) configured one.
       graceMs: Math.min(settings.graceMs, DEFERRED_GRACE_MS),
-      hasContinuation: Boolean(plan.continuation),
+      hasContinuation: hasHandoff(plan),
     };
   }
 
@@ -637,7 +687,9 @@ export function apply(ctx) {
       try {
         writePending({
           sessionId: plan.sessionId,
-          continuation: plan.continuation,
+          progress: plan.progress,
+          next: plan.next,
+          skip: plan.skip,
           reason: plan.reason,
           requestedAt: Date.now(),
           attempts,
@@ -741,7 +793,7 @@ export function apply(ctx) {
         requestId: `restart-handoff-${Date.now()}`,
         sessionId: pending.sessionId,
         mode: "queue",
-        content: [{ type: "text", text: continuationText(pending) }],
+        content: [{ type: "text", text: continuationText(pending, readSettings()) }],
       }, controller.signal);
       appendHistory({ kind: "resumed", sessionId: pending.sessionId, attempts: pending.attempts ?? 1 });
       log(`continuation delivered (${JSON.stringify(accepted)})`);
@@ -799,21 +851,28 @@ export function apply(ctx) {
         "什么时候调：改了插件的宿主端代码（index.js、lib/*）、cordis.patch.yml、依赖，或者 plugin_manager 返回 application: \"restart-required\"——这些热重载都接不住。",
         "什么时候别调：只改了 client.js/界面（会原地刷新）、普通文件或配置改动本来就不需要重启、或者没有任何待生效的改动只是想刷新一下。",
         "调用成功后【必须立刻结束这一回合】：只回一句「已排定重启」就停手，不要再调用任何工具、不要开始任何新任务。这是硬约束，不是建议。",
-        "原因：重启只在这一回合结束、你已经写好的那段回答送达用户之后才发生。调用之后你继续干的活，全部跑在旧进程上——正好是这次重启想换掉的环境——而且会和 continuation 里写的同一件事重复做第二遍。",
-        "所以「重启完再做 X」这类请求：X 只写进 continuation，这一回合一件都不做；工具一返回就停止，让回合结束。",
-        "continuation 写重启后的你要读的第一段话：为什么重启、这一轮做到哪、下一步先做什么、哪些不用重做；插件原样投递（上限 8000 字），留空则只发一句「已重启，继续未完成的工作」。",
+        "原因：重启只在这一回合结束、你已经写好的那段回答送达用户之后才发生。调用之后你继续干的活，全部跑在旧进程上——正好是这次重启想换掉的环境——而且会和交接话里写的同一件事重复做第二遍。",
+        "所以「重启完再做 X」这类请求：X 只写进 next，这一回合一件都不做；工具一返回就停止，让回合结束。",
+        "交接话用三个字段交代：progress（这一轮做到哪）、next（重启后第一步做什么）、skip（哪些不用重做，避免重复劳动），reason 写为什么重启。插件按用户在设置页定的模板排版，每项独占一行；某项留空则整行不显示。三项全空时只发一句「已重启，继续未完成的工作」。",
         "仅桌面版（macOS）；返回 status：deferred / scheduled / already-scheduled / already-deferred / not-root / disabled / unsupported。凡返回 mustStopNow: true，就表示这一回合必须到此为止。",
         "【谁能调】只有主会话（人正在看的那个）能重启宿主。子代理、子会话、teammate 调用会返回 status: not-root，不会重启——它们该做的是把「改动需要重启」写进自己的结果或发给主会话，由主会话决定。",
-        "【有别的 agent 在跑】不拒绝、不催：重启会一直等所有会话都空闲（别的子代理、teammate、其它窗口的对话都算）再执行，等到了就自动重启并投递 continuation。这次调用返回 deferred，调用方照常结束这一回合即可，不需要过一会儿再来调一次。",
+        "【有别的 agent 在跑】不拒绝、不催：重启会一直等所有会话都空闲（别的子代理、teammate、其它窗口的对话都算）再执行，等到了就自动重启并投递交接话。这次调用返回 deferred，调用方照常结束这一回合即可，不需要过一会儿再来调一次。",
       ].join(" "),
       parameters: {
         type: "object",
         properties: {
           reason: { type: "string", description: "为什么要重启（一句话，最多 500 字）。" },
-          continuation: {
+          progress: {
             type: "string",
-            description:
-              "重启后原样投回本会话的那段话，由你自己写（markdown 可用）。写清：为什么重启、上一轮做到哪、接下来第一步做什么、哪些不用重做。不写则只发一句「已重启，继续未完成的工作」。",
+            description: "这一轮做到哪了（最多 2000 字）。重启后的你先读这一项，别重做已经做完的部分。",
+          },
+          next: {
+            type: "string",
+            description: "重启后第一步具体做什么（最多 2000 字）。写清楚到能直接照着执行，不要写「继续之前的工作」。",
+          },
+          skip: {
+            type: "string",
+            description: "重启后不用再做的事（最多 2000 字）：已经验证过的、已经写进文件的、已经跑过且通过的。",
           },
           delay_ms: { type: "number", description: "延迟多少毫秒后重启，默认 1500。" },
         },
@@ -844,7 +903,7 @@ export function apply(ctx) {
           return { status: "disabled", error: "restart_handoff is turned off in Settings > 重启" };
         }
         const finishTool = (result) => {
-          if (result.status === "deferred" || result.status === "scheduled") clearHandoff("model wrote its own hand-off");
+          if (result.status === "deferred" || result.status === "scheduled") clearHandoff("model handed over its fields");
           appendLog(`tool restart_handoff -> ${result.status}`);
           return result;
         };
@@ -869,7 +928,9 @@ export function apply(ctx) {
         const input = args && typeof args === "object" ? args : {};
         const result = scheduleRestart({
           reason: typeof input.reason === "string" ? input.reason : "agent requested restart",
-          continuation: typeof input.continuation === "string" ? input.continuation : "",
+          progress: typeof input.progress === "string" ? input.progress : "",
+          next: typeof input.next === "string" ? input.next : "",
+          skip: typeof input.skip === "string" ? input.skip : "",
           sessionId: rootSessionOf(run?.agent?.id),
           delayMs: Number.isFinite(input.delay_ms) ? input.delay_ms : TOOL_RESTART_DELAY_MS,
         });
@@ -991,6 +1052,21 @@ export function apply(ctx) {
   route("GET", `${ROUTE_PREFIX}/status`, () => ({
     desktop: isDesktop(),
     settings: readSettings(),
+    // What the panel needs to show the effective layout without duplicating the
+    // renderer: the built-in default, plus a sample rendered with fake fields.
+    defaultTemplate: DEFAULT_CONTINUATION_TEMPLATE,
+    templateFields: TEMPLATE_FIELDS,
+    preview: continuationText(
+      {
+        reason: "示例：改完了一个插件",
+        progress: "示例：代码改完，测试已通过",
+        next: "示例：重启后验证效果",
+        skip: "示例：不用重跑测试",
+        sessionId: "sample-00",
+        requestedAt: Date.now(),
+      },
+      readSettings(),
+    ),
     bootedAt: state.bootedAt,
     handoff: state.handoff
       ? { active: true, reason: state.handoff.reason, sessionId: state.handoff.sessionId }
@@ -1030,6 +1106,28 @@ export function apply(ctx) {
     cancelled: cancelCountdown(typeof body.by === "string" ? body.by : "user"),
   }));
 
+  // Live preview for the template editor: render the draft against sample
+  // fields so the panel never has to reimplement the renderer.
+  route("POST", `${ROUTE_PREFIX}/preview`, (body) => {
+    const template = typeof body.template === "string" ? body.template : "";
+    const problem = validateTemplate(template);
+    if (problem) return { ok: false, error: problem };
+    return {
+      ok: true,
+      text: continuationText(
+        {
+          reason: "示例：改完了一个插件",
+          progress: "示例：代码改完，测试已通过",
+          next: "示例：重启后验证效果",
+          skip: "示例：不用重跑测试",
+          sessionId: "sample-00",
+          requestedAt: Date.now(),
+        },
+        { continuationTemplate: template },
+      ),
+    };
+  });
+
   route("POST", `${ROUTE_PREFIX}/settings`, (body) => {
     const patch = {};
     if (typeof body.autoRestart === "boolean") patch.autoRestart = body.autoRestart;
@@ -1041,6 +1139,11 @@ export function apply(ctx) {
     if (Number.isFinite(body.graceMs)) patch.graceMs = Math.min(60000, Math.max(0, body.graceMs));
     if (Number.isFinite(body.cooldownMs)) patch.cooldownMs = Math.min(30 * 60 * 1000, Math.max(0, body.cooldownMs));
     if (Number.isFinite(body.maxAttempts)) patch.maxAttempts = Math.min(10, Math.max(1, Math.round(body.maxAttempts)));
+    if (typeof body.continuationTemplate === "string") {
+      const problem = validateTemplate(body.continuationTemplate);
+      if (problem) throw new Error(problem);
+      patch.continuationTemplate = body.continuationTemplate;
+    }
     if (!Object.keys(patch).length) throw new Error("no supported setting in request body");
     return { settings: writeSettings(patch) };
   });

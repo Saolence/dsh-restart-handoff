@@ -44,12 +44,31 @@ process.env.DSH_RESTART_HANDOFF_LOG = join(dir, "restart-handoff.log");
 const state = await import("../lib/state.js");
 
 assert.deepEqual(state.readPending(), null, "empty pending reads as null");
-state.writePending({ sessionId: "s1", continuation: "do the thing", reason: "test", requestedAt: 1, attempts: 2 });
+state.writePending({
+  sessionId: "s1",
+  reason: "test",
+  progress: "did half of it",
+  next: "do the other half",
+  skip: "",
+  requestedAt: 1,
+  attempts: 2,
+});
 const pending = state.readPending();
 assert.equal(pending.sessionId, "s1");
 assert.equal(pending.attempts, 2);
+assert.equal(pending.next, "do the other half");
+assert.equal("continuation" in pending, false, "the field set is the new one, not the free text");
 state.clearPending();
 assert.equal(state.readPending(), null, "cleared pending reads as null");
+
+// A pending file written by an older build carries free text. Nobody re-reads
+// it: the file is deleted so a restart never delivers the retired format.
+fs.writeFileSync(
+  state.pendingFile(),
+  JSON.stringify({ sessionId: "s1", continuation: "old free text", reason: "test", requestedAt: 1 }),
+);
+assert.deepEqual(state.readPending(), null, "legacy free-text pending is dropped");
+assert.equal(fs.existsSync(state.pendingFile()), false, "the legacy file is removed, not left to retry");
 
 const defaults = state.readSettings();
 assert.equal(defaults.autoRestart, true);
@@ -101,6 +120,46 @@ assert.ok(state.gateFile().endsWith("gate.json"), "gate file path is exposed for
 
 state.appendLog("smoke");
 assert.ok(fs.readFileSync(process.env.DSH_RESTART_HANDOFF_LOG, "utf8").includes("smoke"), "log is appended");
+
+// --- template -----------------------------------------------------------
+const { continuationText, hasHandoff } = await import("../index.js");
+
+assert.equal(state.validateTemplate(state.DEFAULT_CONTINUATION_TEMPLATE), null, "the built-in template is valid");
+assert.equal(state.validateTemplate("{{nope}}"), "不认识的占位符：nope。可用的只有 {{reason}}、{{progress}}、{{next}}、{{skip}}、{{session}}、{{time}}");
+assert.ok(state.validateTemplate("一句话，没有占位符"), "a template without placeholders is refused");
+assert.equal(state.validateTemplate("x".repeat(4001)), "模板太长了（上限 4000 字）");
+assert.throws(() => state.writeSettings({ continuationTemplate: "{{nope}}" }), /不认识的占位符/, "saving is refused, not silently dropped");
+assert.equal(state.readSettings().continuationTemplate, "", "a refused save leaves the setting alone");
+
+const full = {
+  sessionId: "abcdef123456",
+  reason: "rationale",
+  progress: "halfway",
+  next: "finish it",
+  skip: "the tests",
+  requestedAt: new Date(2026, 10, 5, 9, 7).getTime(),
+};
+const rendered = continuationText(full, {});
+assert.ok(rendered.startsWith("🔄 DSH 已重启完成（09:07）"), rendered);
+assert.ok(rendered.includes("**为什么**：rationale"), rendered);
+assert.ok(rendered.includes("**做到哪**：halfway"), rendered);
+assert.ok(rendered.includes("**下一步**：finish it"), rendered);
+assert.ok(rendered.includes("**别重做**：the tests"), rendered);
+assert.equal(rendered.split("\n").filter(Boolean).length, 5, "header plus four field lines");
+
+// A missing field takes its label with it, so no empty "下一步：" is delivered.
+const partial = continuationText({ ...full, progress: "", skip: "" }, {});
+assert.ok(!partial.includes("做到哪"), "an empty field drops its whole line");
+assert.ok(!partial.includes("别重做"));
+assert.ok(partial.includes("**下一步**：finish it"));
+
+// The retired fallback still reads like a sentence when nothing was handed over.
+assert.equal(continuationText({ reason: "only reason" }, {}).includes("**下一步**"), false);
+assert.equal(hasHandoff({ reason: "only reason" }), false, "a plan with no fields has no hand-off");
+assert.equal(hasHandoff({ next: "x" }), true);
+
+const custom = continuationText(full, { continuationTemplate: "🔁 {{time}} 重启\n满了：{{progress}}\n下一步：{{next}}" });
+assert.equal(custom, "🔁 09:07 重启\n满了：halfway\n下一步：finish it");
 
 fs.rmSync(dir, { recursive: true, force: true });
 console.log("smoke ok");

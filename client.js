@@ -161,6 +161,42 @@ window.__ModuleLoader__.load({
   border-color: color-mix(in srgb, var(--dsw-alias-state-error-primary, #d9534f) 38%, transparent);
 }
 
+.ar-template-hint {
+  margin: 8px 0 10px; font-size: 0.8rem; line-height: 1.6;
+  color: var(--dsw-alias-label-secondary, inherit);
+}
+.ar-text {
+  width: 100%; box-sizing: border-box; resize: vertical; min-height: 120px;
+  padding: 11px 13px; border-radius: 12px; font-family: inherit; font-size: 0.86rem; line-height: 1.65;
+  color: inherit; background: var(--dsw-alias-bg-layer-2, rgba(127,127,127,0.06));
+  border: 1px solid var(--dsw-alias-border-l1, rgba(127,127,127,0.24));
+}
+.ar-text:focus-visible { outline: 2px solid var(--dsw-alias-brand-primary, #4b7bec); outline-offset: 1px; }
+.ar-text:disabled { opacity: 0.55; }
+.ar-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 0; }
+.ar-chip {
+  padding: 4px 9px; border-radius: 8px; cursor: pointer; font: inherit; font-size: 0.74rem;
+  color: var(--dsw-alias-label-secondary, inherit); white-space: nowrap;
+  border: 1px solid var(--dsw-alias-border-l1, rgba(127,127,127,0.24));
+  background: var(--dsw-alias-bg-layer-2, rgba(127,127,127,0.05));
+}
+.ar-chip:hover:not(:disabled) { color: inherit; border-color: var(--dsw-alias-border-l2, rgba(127,127,127,0.42)); }
+.ar-chip:disabled { opacity: 0.45; cursor: not-allowed; }
+.ar-template-actions { display: flex; align-items: center; gap: 10px; margin: 12px 0 4px; flex-wrap: wrap; }
+.ar-template-actions .ar-btn { padding: 8px 14px; font-size: 0.84rem; }
+.ar-btn--ghost { border-color: transparent; color: var(--dsw-alias-label-secondary, inherit); }
+.ar-template-note { font-size: 0.78rem; color: var(--dsw-alias-label-secondary, inherit); }
+.ar-preview-title {
+  margin: 14px 0 6px; font-size: 0.78rem; font-weight: 600; letter-spacing: 0.05em;
+  color: var(--dsw-alias-label-secondary, inherit);
+}
+.ar-preview {
+  margin: 0 0 12px; padding: 12px 14px; border-radius: 12px; overflow-x: auto;
+  font-family: inherit; font-size: 0.84rem; line-height: 1.7; white-space: pre-wrap; word-break: break-word;
+  background: var(--dsw-alias-bg-layer-2, rgba(127,127,127,0.06));
+  border: 1px dashed var(--dsw-alias-border-l1, rgba(127,127,127,0.28));
+}
+
 .ar-msg { margin: 0; font-size: 0.85rem; }
 .ar-msg[data-tone="error"] { color: var(--dsw-alias-state-error-primary, #d9534f); }
 .ar-msg[data-tone="ok"] { color: var(--dsw-alias-state-success-primary, #3c9a53); }
@@ -334,6 +370,147 @@ window.__ModuleLoader__.load({
           label: props.label,
           onChange: props.onChange,
         }),
+      );
+    }
+
+    // The hand-off layout is user-authored, so it gets a real editor: a textarea
+    // plus a preview rendered by the host (same code path as the real delivery,
+    // so what you see here is what lands in the next session).
+    function TemplateEditor(props) {
+      const saved = String((props.settings && props.settings.continuationTemplate) || "");
+      const fallback = String(props.defaultTemplate || "");
+      const [draft, setDraft] = React.useState(saved);
+      const [preview, setPreview] = React.useState(String(props.preview || ""));
+      const [error, setError] = React.useState("");
+      const [busy, setBusy] = React.useState(false);
+      const [dirty, setDirty] = React.useState(false);
+      const timer = React.useRef(null);
+      const latest = React.useRef(draft);
+
+      // Adopt a template changed elsewhere (another window, or a save landing).
+      React.useEffect(() => {
+        if (dirty) return;
+        if (draft !== saved) {
+          setDraft(saved);
+          latest.current = saved;
+        }
+      }, [saved]);
+
+      React.useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
+
+      const askPreview = (text) => {
+        if (timer.current) clearTimeout(timer.current);
+        timer.current = setTimeout(async () => {
+          try {
+            const response = await fetch(BASE + "/preview", {
+              method: "POST",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({ template: text }),
+            });
+            const value = await response.json().catch(() => ({}));
+            if (value && value.ok === false) {
+              setError(String(value.error || "模板有问题"));
+              return;
+            }
+            if (!response.ok) throw new Error("HTTP " + response.status);
+            setError("");
+            setPreview(String(value.text || ""));
+          } catch (cause) {
+            setError("预览没出来：" + String((cause && cause.message) || cause));
+          }
+        }, 260);
+      };
+
+      const edit = (text) => {
+        setDraft(text);
+        latest.current = text;
+        setDirty(true);
+        askPreview(text);
+      };
+
+      const save = async () => {
+        setBusy(true);
+        try {
+          const ok = await props.save({ continuationTemplate: latest.current });
+          // A refused save must not look saved: the panel message explains why,
+          // and the draft stays dirty so the button still offers to save.
+          if (ok === false) return;
+          setDirty(false);
+          setError("");
+        } catch (cause) {
+          // The host re-validates; a refused save must say why instead of
+          // looking saved until the next refresh.
+          setError("没保存上：" + String((cause && cause.message) || cause));
+        } finally {
+          setBusy(false);
+        }
+      };
+
+      const reset = () => {
+        edit("");
+        setDraft("");
+        latest.current = "";
+      };
+
+      return h(
+        "div",
+        { className: "ar-card" },
+        h("p", { className: "ar-card-title" }, "交接话模板"),
+        h(
+          "p",
+          { className: "ar-template-hint" },
+          "重启后你看到的那段话长什么样，由这里决定。模型只填内容，排版按下面的模板走；哪一项模型没填，那一行整行不显示。",
+        ),
+        h("textarea", {
+          className: "ar-text",
+          rows: 7,
+          spellCheck: false,
+          value: draft,
+          placeholder: fallback,
+          disabled: props.disabled || busy,
+          onChange: (event) => edit(event.target.value),
+        }),
+        h(
+          "div",
+          { className: "ar-chips" },
+          ["reason", "progress", "next", "skip", "session", "time"].map((field) =>
+            h(
+              "button",
+              {
+                type: "button",
+                key: field,
+                className: "ar-chip",
+                disabled: props.disabled || busy,
+                onClick: () => edit(draft + "{{" + field + "}}"),
+                title: "插入 {{" + field + "}}",
+              },
+              "{{" + field + "}}",
+            ),
+          ),
+        ),
+        h(
+          "div",
+          { className: "ar-template-actions" },
+          h(
+            "button",
+            {
+              type: "button",
+              className: "ar-btn",
+              disabled: props.disabled || busy || !dirty,
+              onClick: save,
+            },
+            dirty ? "保存模板" : "已保存",
+          ),
+          h(
+            "button",
+            { type: "button", className: "ar-btn ar-btn--ghost", disabled: props.disabled || busy, onClick: reset },
+            "恢复默认",
+          ),
+          dirty ? h("span", { className: "ar-template-note" }, "改了还没保存") : null,
+        ),
+        error ? h("p", { className: "ar-msg", "data-tone": "error" }, error) : null,
+        h("p", { className: "ar-preview-title" }, "预览"),
+        h("pre", { className: "ar-preview" }, preview || "（空）"),
       );
     }
 
@@ -680,8 +857,10 @@ window.__ModuleLoader__.load({
           const value = await post("settings", patch);
           setStatus((current) => (current ? Object.assign({}, current, { settings: value.settings }) : current));
           setMessage({ tone: "ok", text: "已保存" });
+          return true;
         } catch (cause) {
           setMessage({ tone: "error", text: "没保存上：" + String((cause && cause.message) || cause) });
+          return false;
         } finally {
           setBusy(false);
         }
@@ -900,6 +1079,14 @@ window.__ModuleLoader__.load({
             onChange: (value) => saveSettings({ pruneAuthCookies: value }),
           }),
         ),
+
+        h(TemplateEditor, {
+          settings,
+          preview: status && status.preview,
+          defaultTemplate: status && status.defaultTemplate,
+          disabled: busy || !desktop || !status,
+          save: saveSettings,
+        }),
 
         h(
           "div",

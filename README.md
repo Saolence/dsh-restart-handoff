@@ -101,6 +101,8 @@ plugin_manager: { action: "set_plugin", target: "include:restart-handoff", enabl
 - **重启后自动接着做**——默认开；把交接话投回原会话，关掉就只重启、等你开口。
 
 「更多设置」折叠着三个不常动的：允许我主动申请重启、每轮说完再动手、顺手清理过时的登录记录。
+
+再往下是**交接话模板**：重启后你看到的那段话长什么样，由这里决定。模型只填内容（`{{reason}}` `{{progress}}` `{{next}}` `{{skip}}`），排版按模板走；某一行引用的字段模型没填，那一行整行不显示，不会留下「下一步：（空）」。还有 `{{session}}`（会话号前 8 位）和 `{{time}}`（重启时刻）可用。输入框下方是实时预览，改一个字就重排一次；保存时宿主会再校验一遍占位符，认不出的名字直接报错、不写入。模板留空 = 用内置的默认排版。
 大卡片右边的「现在重启」要连点两下才生效（第二步确认），手动重启不续跑；倒计时或排队时那个按钮会变成「先不重启」。
 
 设置存在 `~/.dsh/restart-handoff/settings.json`，事件在 `history.jsonl`，完整日志在 `~/.dsh/restart-handoff.log`。
@@ -113,10 +115,10 @@ plugin_manager: { action: "set_plugin", target: "include:restart-handoff", enabl
       ├── 自动：宿主看到 restart-required → 用 steer 问模型
       │        「写交接话，然后调 restart_handoff」
       │        └── 2 分钟没回音：发一句提示照常重启
-      └── 工具：agent 调 restart_handoff({ continuation })
+      └── 工具：agent 调 restart_handoff({ reason, progress, next, skip })
       │
       ▼
-挂起请求            pending.json ← { sessionId, continuation, reason, requestedAt, attempts }
+挂起请求            pending.json ← { sessionId, reason, progress, next, skip, requestedAt, attempts }
       ▼
 等所有会话说完      别的会话还在跑就不动手（gate.json 每秒刷新一次）
       ▼
@@ -127,7 +129,7 @@ plugin_manager: { action: "set_plugin", target: "include:restart-handoff", enabl
       ▼
 新宿主启动，插件加载：比对 exit.json / boot.json（区分「计划内重启」和「异常退出」）
       ▼
-2.5 秒后：resolveAgent(sessionId) → prompt({ mode: "queue", content: [交接话] }) → 删掉 pending.json
+2.5 秒后：resolveAgent(sessionId) → prompt({ mode: "queue", content: [按模板渲染的交接话] }) → 删掉 pending.json
       ▼
 同一个会话收到的下一条消息，就是那段交接话
 ```
@@ -163,10 +165,14 @@ plugin_manager: { action: "set_plugin", target: "include:restart-handoff", enabl
 ```json
 {
   "reason": "换了侧边栏插件",
-  "continuation": "## 为什么重启\n…\n## 刚才做到哪\n…\n## 下一步\n…",
+  "progress": "面板已经接上新的插槽，测试还没跑",
+  "next": "跑 npm test，然后看设置页有没有报错",
+  "skip": "不用再改 client.js 的样式",
   "delay_ms": 1500
 }
 ```
+
+四个字段里 `reason` 一句话就够，另外三项写清楚到能直接照着执行：`progress` 是这一轮做到哪、`next` 是重启后第一步、`skip` 是别重复劳动的部分。排版不归模型管，模板在设置页里定。
 
 工具立刻返回，不等重启，也不阻塞这一轮：
 
@@ -184,7 +190,7 @@ plugin_manager: { action: "set_plugin", target: "include:restart-handoff", enabl
 
 「重启完成」永远不会从这个工具返回——**完成证据就是那段交接话本身**，它作为下一条消息到达。
 
-`next_step` 已移除（传了会被 schema 拒绝），请用 `continuation`。
+`next_step` 和自由文本 `continuation` 都已移除：传了会被 schema 拒绝（`additionalProperties: false`），旧版留下的 pending 文件在下次启动时直接删掉，不投递。
 
 ## 写入的文件
 

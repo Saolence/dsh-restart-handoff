@@ -99,6 +99,8 @@ One big card says what is going on right now — plain words, no jargon. Below i
 - **Continue automatically after the restart** — on by default; delivers the hand-off back into this conversation.
 
 **More settings** folds away the three you rarely touch: let the agent ask for a restart, finish the turn first, prune stale login records.
+
+Below those sits the **hand-off template**: it decides what the message you read after a restart looks like. The model only fills content (`{{reason}}`, `{{progress}}`, `{{next}}`, `{{skip}}`); the layout is the template's job. A line whose placeholder came back empty is dropped whole, so a partial hand-off never leaves a dangling "next: (empty)". `{{session}}` (first 8 characters of the session id) and `{{time}}` (the restart clock time) are also available. The box previews live as you type; on save the host re-validates the placeholders and refuses unknown names instead of storing them. An empty template means the built-in layout.
 **Restart now** on the card needs a second click to confirm and does not resume; while counting down or queued the same spot offers **not now**.
 
 Just **above the account row** at the sidebar foot sits an **icon-only** circular button (`↻`, the same 24px muted chip and 12px radius as the account row icon) with no "重启" text — the wording only appears on hover. A click opens a small yes / no popover; after yes the button turns amber and counts down three seconds with a tiny progress ring beside it, then restarts — clicking again during those seconds cancels. While a restart is queued or already scheduled, the ring (a pause glyph when queued) appears and a click cancels.
@@ -113,10 +115,10 @@ a change needs a restart
       ├── automatic: the host sees restart-required → asks the model (steer)
       │              "write the hand-off, then call restart_handoff"
       │              └── no answer in 2 minutes: restart with a one-line note
-      └── tool: the agent calls restart_handoff({ continuation })
+      └── tool: the agent calls restart_handoff({ reason, progress, next, skip })
       │
       ▼
-park the request    pending.json ← { sessionId, continuation, reason, requestedAt, attempts }
+park the request    pending.json ← { sessionId, reason, progress, next, skip, requestedAt, attempts }
       ▼
 wait until every session is idle    another session mid-answer holds it (gate.json, refreshed each second)
       ▼
@@ -163,10 +165,14 @@ The panel button and the automatic trigger are exempt: a human pressed one, and 
 ```json
 {
   "reason": "swapped the sidebar plugin",
-  "continuation": "## why\n…\n## where I was\n…\n## next step\n…",
+  "progress": "the panel is wired to the new slots, tests not run yet",
+  "next": "run npm test, then check the settings pane for errors",
+  "skip": "no need to touch the client.js styles again",
   "delay_ms": 1500
 }
 ```
+
+`reason` is one line; the other three should be concrete enough to act on: `progress` is where this round stopped, `next` is the first step after the restart, `skip` is the work that must not be repeated. Layout is not the model's business — that is the template in Settings.
 
 It returns immediately — it neither blocks nor waits for the restart:
 
@@ -180,7 +186,7 @@ It returns immediately — it neither blocks nor waits for the restart:
 
 The "restart finished" result never arrives through this tool — **the proof of completion is the hand-off itself**, which arrives as the next message in the session.
 
-`next_step` has been removed (the schema rejects it); use `continuation`.
+`next_step` and the free-text `continuation` are both gone: passing either is rejected by the schema (`additionalProperties: false`), and a pending file left by an older build is deleted on the next boot instead of delivered.
 
 ## Files it writes
 
