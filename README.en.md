@@ -2,14 +2,14 @@
 
 <h1 align="center">dsh-restart-handoff</h1>
 
-<p align="center"><strong>An auto-restart plugin for DeepSeek Harness Desktop: when a change only takes effect after a restart, it restarts the host for you and hands "why we restarted, what to do next" back to the same session — restart as often as you like, the task never loses the thread.</strong></p>
+<p align="center"><strong>An auto-restart plugin for DeepSeek Harness Desktop and <code>dsh web</code> hosts: when a change only takes effect after a restart, it restarts the host for you and hands "why we restarted, what to do next" back to the same session — restart as often as you like, the task never loses the thread.</strong></p>
 
 <p align="center"><a href="README.md">简体中文</a> · <strong>English</strong></p>
 
 <p align="center">
   <a href="LICENSE"><img alt="MIT license" src="https://img.shields.io/badge/license-MIT-2f6f4f?style=flat-square"></a>
   <img alt="macOS only" src="https://img.shields.io/badge/platform-macOS-4b6fff?style=flat-square">
-  <img alt="DSH Desktop only" src="https://img.shields.io/badge/host-DSH%20Desktop-7da1de?style=flat-square">
+  <img alt="DSH Desktop and dsh web" src="https://img.shields.io/badge/host-DSH%20Desktop%20%C2%B7%20dsh%20web-7da1de?style=flat-square">
   <a href="https://github.com/Saolence/dsh-restart-handoff/releases/latest"><img alt="latest release" src="https://img.shields.io/github/v/release/Saolence/dsh-restart-handoff?style=flat-square"></a>
   <a href="https://github.com/Saolence/dsh-restart-handoff/stargazers"><img alt="stars" src="https://img.shields.io/github/stars/Saolence/dsh-restart-handoff?style=flat-square"></a>
 </p>
@@ -119,7 +119,7 @@ No network access at all — there are no outbound requests. State lives locally
 
 ### Does it work on Windows, Linux, or the web version?
 
-No. It restarts DSH Desktop (Electron), so a plain web or CLI host answers "desktop only". It has only been verified on macOS so far.
+Both kinds of host are supported: DSH Desktop (the Electron app) and a CLI host such as `dsh web`. What it cannot restart is a throwaway process with no window to bring back — a headless script or a test harness, which get "desktop app or a `dsh web` host". Both are verified on macOS; `dsh web` on Linux is untested.
 
 ### Does it touch my login state?
 
@@ -135,13 +135,13 @@ It stops listening and stops restarting. The files under `~/.dsh/restart-handoff
 
 ## Install
 
-Requires **DSH Desktop**. It shows up as "Restart handoff" in Settings once installed.
+Requires **DSH Desktop** (for `dsh web`, install into the `web` profile — see the next section). It shows up as "Restart handoff" in Settings once installed.
 
 ```bash
 dsh plugin --profile desktop add @saolence/dsh-restart-handoff
 ```
 
-> It has to be the `desktop` profile: the plugin restarts the desktop app, so installing into `web` does nothing.
+> Match the profile to the host you run: `desktop` for the app, `web` for `dsh web`. Installed into the wrong one, the plugin does nothing.
 >
 > Editing this package does **not** hot-reload: the profile points at it through a symlink, so HMR never hears about the change. Toggle the plugin off and on (or restart once) after editing.
 

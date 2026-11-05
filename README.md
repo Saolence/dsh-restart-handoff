@@ -2,14 +2,14 @@
 
 <h1 align="center">dsh-restart-handoff</h1>
 
-<p align="center"><strong>DeepSeek Harness 桌面版的自动重启插件：改动必须重启才生效时，它替你重启，再把「为什么重启、接下来做什么」接回原来的会话——重启多少次，任务都不会断线。</strong></p>
+<p align="center"><strong>DeepSeek Harness 桌面版与 <code>dsh web</code> 宿主的自动重启插件：改动必须重启才生效时，它替你重启，再把「为什么重启、接下来做什么」接回原来的会话——重启多少次，任务都不会断线。</strong></p>
 
 <p align="center"><strong>简体中文</strong> · <a href="README.en.md">English</a></p>
 
 <p align="center">
   <a href="LICENSE"><img alt="MIT 许可证" src="https://img.shields.io/badge/license-MIT-2f6f4f?style=flat-square"></a>
   <img alt="仅 macOS" src="https://img.shields.io/badge/platform-macOS-4b6fff?style=flat-square">
-  <img alt="仅 DSH 桌面版" src="https://img.shields.io/badge/host-DSH%20Desktop-7da1de?style=flat-square">
+  <img alt="DSH 桌面版与 dsh web" src="https://img.shields.io/badge/host-DSH%20Desktop%20%C2%B7%20dsh%20web-7da1de?style=flat-square">
   <a href="https://github.com/Saolence/dsh-restart-handoff/releases/latest"><img alt="最新版本" src="https://img.shields.io/github/v/release/Saolence/dsh-restart-handoff?style=flat-square"></a>
   <a href="https://github.com/Saolence/dsh-restart-handoff/stargazers"><img alt="Star 数" src="https://img.shields.io/github/stars/Saolence/dsh-restart-handoff?style=flat-square"></a>
 </p>
@@ -119,7 +119,7 @@
 
 ### 支持 Windows、Linux 或网页版吗？
 
-不支持。它要重启的是 DSH 桌面版（Electron），所以在纯网页 / 命令行宿主里会直接回「只能在桌面版里重启」。目前只在 macOS 上验证过。
+两种宿主都支持：DSH 桌面版（Electron App）和 `dsh web` 这样的命令行宿主。真正不支持的是没有窗口可回的一次性进程——headless 脚本、测试桩，它们拿到的是「只能在桌面版或 dsh web 里使用」。macOS 上两种都验证过；Linux 上的 `dsh web` 没验过。
 
 ### 会不会碰我的登录状态？
 
@@ -135,13 +135,13 @@ dsh plugin --profile desktop remove @saolence/dsh-restart-handoff
 
 ## 安装
 
-前提：**DSH 桌面版**。装完它会出现在设置页的「重启交接」里。
+前提：**DSH 桌面版**（跑 `dsh web` 的装到 `web` profile，见下一节）。装完它会出现在设置页的「重启交接」里。
 
 ```bash
 dsh plugin --profile desktop add @saolence/dsh-restart-handoff
 ```
 
-> 必须是 `desktop` 这个 profile：它重启的是桌面 App，装进 `web` 不生效。
+> profile 要对上你用的宿主：桌面 App 用 `desktop`，`dsh web` 用 `web`。装错了插件不生效。
 >
 > 改这个包**本身**不会热重载：profile 里指向它的是符号链接，HMR 收不到通知，改完要停用再启用一次（或重启一次）才生效。
 
@@ -180,7 +180,7 @@ dsh plugin --profile web add @saolence/dsh-restart-handoff
 - 只重启宿主，不重启你机器上的其他进程。
 - 手动重启不续跑——那种时刻你人就在跟前。
 - 交接话只在一次重启里有效，超过 10 分钟未投递就作废。
-- Web GUI 需要带令牌的地址才能打开，插件不碰这块。
+- `dsh web` 每次启动都换一个带令牌的地址，旧标签必然失效：插件会替你打开新标签，但它管不了你原来那个。
 
 ## 开发者
 
