@@ -140,18 +140,22 @@ const full = {
   requestedAt: new Date(2026, 10, 5, 9, 7).getTime(),
 };
 const rendered = continuationText(full, {});
-assert.ok(rendered.startsWith("🔄 DSH 已重启完成（09:07）"), rendered);
-assert.ok(rendered.includes("**为什么**：rationale"), rendered);
-assert.ok(rendered.includes("**做到哪**：halfway"), rendered);
-assert.ok(rendered.includes("**下一步**：finish it"), rendered);
-assert.ok(rendered.includes("**别重做**：the tests"), rendered);
-assert.equal(rendered.split("\n").filter(Boolean).length, 5, "header plus four field lines");
+assert.ok(rendered.startsWith("🔄 **DSH 已重启完成** · 09:07"), rendered);
+assert.ok(rendered.includes("- **为什么**：rationale"), rendered);
+assert.ok(rendered.includes("- **做到哪**：halfway"), rendered);
+assert.ok(rendered.includes("- **下一步**：finish it"), rendered);
+assert.ok(rendered.includes("- **别重做**：the tests"), rendered);
+// The list needs a blank line before it, or renderers glue the header onto the
+// first bullet; and each bullet must sit on its own line.
+assert.ok(rendered.includes("09:07\n\n- **为什么**"), rendered);
+assert.equal(rendered.split("\n").filter((line) => line.startsWith("- ")).length, 4, "four bullets");
 
 // A missing field takes its label with it, so no empty "下一步：" is delivered.
 const partial = continuationText({ ...full, progress: "", skip: "" }, {});
 assert.ok(!partial.includes("做到哪"), "an empty field drops its whole line");
 assert.ok(!partial.includes("别重做"));
 assert.ok(partial.includes("**下一步**：finish it"));
+assert.equal(partial.split("\n").filter((line) => line.startsWith("- ")).length, 2, "two bullets survive");
 
 // The retired fallback still reads like a sentence when nothing was handed over.
 assert.equal(continuationText({ reason: "only reason" }, {}).includes("**下一步**"), false);
