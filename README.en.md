@@ -2,7 +2,7 @@
 
 <h1 align="center">dsh-restart-handoff</h1>
 
-<p align="center"><strong>An auto-restart plugin for DSH Desktop: when a change only takes effect after a restart, it restarts the host for you and hands "why we restarted, what to do next" back to the same session.</strong></p>
+<p align="center"><strong>An auto-restart plugin for DeepSeek Harness Desktop: when a change only takes effect after a restart, it restarts the host for you and hands "why we restarted, what to do next" back to the same session — restart as often as you like, the task never loses the thread.</strong></p>
 
 <p align="center"><a href="README.md">简体中文</a> · <strong>English</strong></p>
 
@@ -19,13 +19,25 @@
 
 ## In one sentence
 
-After you change a plugin or install something, DSH says it needs a restart. Restarting by hand means closing the window, reopening it, remembering where you were, and re-typing the request.
+After you change a plugin or install something, DSH (DeepSeek Harness) says it needs a restart. Restarting by hand means closing the window, reopening it, remembering where you were, and re-typing the request.
 
-This plugin fills that gap: it writes a hand-off note to disk before the restart, and the note arrives as the first message of the session afterwards, so the model picks up where it stopped.
+This plugin fills that gap: it writes a hand-off note to disk before the restart, and the note arrives as the first message of the session afterwards, so the model picks up where it stopped. **Restart five times in one task and it resumes five times, without a break in between.**
 
 It does not modify your models and it never talks to the network — it only reads and writes a few state files on your own machine.
 
-## Three moments you will use it
+## Why use it
+
+**Unlimited continuation.** Every restart carries "what is done, what comes next" across, so the model continues instead of asking again. A plugin change that needs three restarts, a harness change that needs ten — it is still one thread.
+
+**The model knows what happened before the restart.** The note is written by the model itself, while the context is fresh: why we restarted, what this round accomplished, the first step afterwards, what not to redo. Not a generic reassurance.
+
+**It matters most when you change plugins or the harness.** Those changes almost always force a restart, and a restart is exactly when context gets lost — which is the reason this plugin exists.
+
+**You don't have to remember or re-explain.** Nobody has to ask "where were we?" — it is already answered when you come back.
+
+**The restart itself stays out of the way.** It won't cut off the answer in flight, it waits for every window to go idle, it cools down for 60 seconds, and when it refuses it says how many seconds are left.
+
+## Four moments you will use it
 
 **1. An agent changed plugin code**
 
@@ -35,7 +47,11 @@ The host answers `application: "restart-required"`. The plugin restarts by itsel
 
 Tell the model "restart when you're done". It calls the tool once, writes the hand-off while the context is fresh, then restarts.
 
-**3. You just want the new build now**
+**3. You are changing DeepSeek Harness itself**
+
+Editing a built-in tool, editing host code, restarting over and over to run tests — each round comes back carrying the previous round's progress, so the request never has to be restated.
+
+**4. You just want the new build now**
 
 Settings → "Restart handoff" → "Restart now". This one only restarts; it does not auto-resume.
 
@@ -59,9 +75,8 @@ If the model leaves a field empty, that whole line disappears — no "Next: (emp
 
 A one-line fallback appears only in three cases: the model wrote nothing, five minutes passed, or the session id could not be resolved. It reads: "DSH just restarted, carry on with what's left."
 
-## Four things it handles for you
+## Where it stays out of the way
 
-- **It does not cut off the answer in flight** — the restart waits until this turn is finished and its tool results are on disk.
 - **It waits for every window** — not just the current session: subagents and other windows count too.
 - **It will not loop** — at least 60 seconds between restarts; one resume per restart; a hand-off note is delivered at most three times.
 - **It says why when it refuses** — tapping restart inside the cooldown tells you "restarted just now, wait 42 more seconds" instead of pretending it started.
@@ -81,6 +96,10 @@ A one-line fallback appears only in three cases: the model wrote nothing, five m
 ### Does a restart lose the conversation I am in the middle of?
 
 No. The plugin waits for the current turn to finish and its results to be written, then waits for every window to go idle, and only then starts a five-second countdown. Cancel during the countdown and nothing happens; if you miss it, the hand-off note is already on disk and returns to the same session after the relaunch.
+
+### If one task restarts several times, does the context break?
+
+No. One restart, one resume: the note survives the process and the model reads it first after the relaunch. A long chain thins out — each hop only carries a paragraph — but it never breaks in two.
 
 ### Will it restart on its own again and again?
 
