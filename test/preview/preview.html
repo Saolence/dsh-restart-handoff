@@ -4,57 +4,91 @@
 <meta charset="utf-8" />
 <title>重启交接面板预览</title>
 <style>
+  /* Host tokens, copied from the desktop app's design platform (light first,
+     then the dark block) so a screenshot here looks like the real settings page. */
   :root {
-    --dsw-alias-bg-base: #16181d;
-    --dsw-alias-bg-layer-1: #1c1f26;
-    --dsw-alias-bg-layer-2: #242833;
-    --dsw-alias-border-l1: #2d323d;
-    --dsw-alias-border-l2: #3a4050;
-    --dsw-alias-label-primary: #e8eaee;
-    --dsw-alias-label-secondary: #9aa1ad;
-    --dsw-alias-brand-primary: #4d7cfe;
-    --dsw-alias-state-success-primary: #3c9a53;
-    --dsw-alias-state-warn-primary: #d99a2b;
-    --dsw-alias-state-error-primary: #d95050;
-    --dsw-alias-state-idle-primary: #6b7280;
+    --dsw-radius-xs: 4px; --dsw-radius-sm: 8px; --dsw-radius-md: 12px; --dsw-radius-lg: 16px;
+    --dsw-elevation-prominent: 0 0 0 0.5px rgba(0,0,0,0.08), 0 3px 8px rgba(0,0,0,0.04), 0 0 20px rgba(0,0,0,0.05);
+    --dsw-focus-ring-width: 2px;
+    --dsw-alias-state-business-primary: rgb(86, 134, 254);
+    --dsw-alias-bg-base: rgb(255, 255, 255);
+    --dsw-alias-bg-layer-1: rgb(255, 255, 255);
+    --dsw-alias-bg-layer-2: rgb(249, 250, 251);
+    --dsw-alias-bg-layer-3: rgb(255, 255, 255);
+    --dsw-alias-bg-overlay: rgb(255, 255, 255);
+    --dsw-alias-border-l1: rgba(0, 0, 0, 0.04);
+    --dsw-alias-border-l2: rgba(0, 0, 0, 0.1);
+    --dsw-alias-border-l3: rgba(0, 0, 0, 0.12);
+    --dsw-alias-border-l4: rgba(0, 0, 0, 0.16);
+    --dsw-alias-label-primary: rgb(15, 17, 21);
+    --dsw-alias-label-secondary: rgb(97, 102, 107);
+    --dsw-alias-label-tertiary: rgb(129, 133, 140);
+    --dsw-alias-label-caption: rgb(129, 133, 140);
+    --dsw-alias-brand-primary: rgb(15, 17, 21);
+    --dsw-alias-interactive-bg-hover: rgba(38, 49, 72, 0.06);
+    --dsw-alias-state-success-primary: rgb(34, 197, 94);
+    --dsw-alias-state-warn-primary: rgb(245, 158, 11);
+    --dsw-alias-state-error-primary: rgb(236, 19, 19);
+    --dsw-alias-state-idle-primary: rgb(151, 157, 166);
   }
-  /* ?theme=light — daytime tokens; screenshots for the README use this. */
-  :root[data-theme="light"] {
-    --dsw-alias-bg-base: #ffffff;
-    --dsw-alias-bg-layer-1: #ffffff;
-    --dsw-alias-bg-layer-2: #f4f5f7;
-    --dsw-alias-border-l1: #e6e8ec;
-    --dsw-alias-border-l2: #d6dae1;
-    --dsw-alias-label-primary: #1b1f26;
-    --dsw-alias-label-secondary: #6a7280;
-    --dsw-alias-brand-primary: #3d6ff5;
-    --dsw-alias-state-success-primary: #1a9c53;
-    --dsw-alias-state-warn-primary: #c07f0a;
-    --dsw-alias-state-error-primary: #cf3b3b;
-    --dsw-alias-state-idle-primary: #9aa1ac;
+  :root[data-theme="dark"] {
+    --dsw-elevation-prominent: 0 0 0 0.5px rgba(255,255,255,0.1), 0 3px 8px rgba(0,0,0,0.28), 0 0 20px rgba(0,0,0,0.32);
+    --dsw-alias-bg-base: rgb(21, 21, 23);
+    --dsw-alias-bg-layer-1: rgb(35, 35, 36);
+    --dsw-alias-bg-layer-2: rgb(44, 44, 46);
+    --dsw-alias-bg-layer-3: rgb(53, 54, 56);
+    --dsw-alias-bg-overlay: rgb(53, 54, 56);
+    --dsw-alias-border-l1: rgba(255, 255, 255, 0.06);
+    --dsw-alias-border-l2: rgba(255, 255, 255, 0.12);
+    --dsw-alias-border-l3: rgba(255, 255, 255, 0.16);
+    --dsw-alias-border-l4: rgba(255, 255, 255, 0.2);
+    --dsw-alias-label-primary: rgb(249, 250, 251);
+    --dsw-alias-label-secondary: rgb(207, 211, 214);
+    --dsw-alias-label-tertiary: rgb(173, 178, 184);
+    --dsw-alias-label-caption: rgb(173, 178, 184);
+    --dsw-alias-brand-primary: rgb(249, 250, 251);
+    --dsw-alias-interactive-bg-hover: rgba(255, 255, 255, 0.08);
+    --dsw-alias-state-error-primary: rgb(242, 90, 90);
+    --dsw-alias-state-idle-primary: rgb(129, 133, 140);
   }
   body {
-    margin: 0; padding: 28px; background: var(--dsw-alias-bg-base);
+    margin: 0; padding: 28px; background: var(--dsw-alias-bg-layer-2);
     font-family: -apple-system, "SF Pro Text", "PingFang SC", system-ui, sans-serif;
   }
   /* the preview re-mounts the whole tree on every tick; keep the entrance
      animation from restarting mid-screenshot */
   .ar-card--count { animation: none !important; }
-  #root { background: var(--dsw-alias-bg-layer-1); border-radius: 16px; padding: 22px; }
-  :root[data-theme="light"] #root { border: 1px solid #eef0f3; }
+  #root { width: 760px; background: var(--dsw-alias-bg-base); padding: 20px 24px; border-radius: 12px; }
 </style>
 </head>
 <body>
 <div id="root"></div>
 <script type="module">
-import { createElement, mount } from "./mini-react.js";
+import { createElement, mount } from "./mini-react.js?v=5";
 
 const params = new URLSearchParams(location.search);
-if (params.get("theme") === "light") document.documentElement.dataset.theme = "light";
+if (params.get("theme") === "dark") document.documentElement.dataset.theme = "dark";
 const scenario = params.get("s") || "idle";
 const now = Date.now();
+const DEFAULT_TEMPLATE = '## DSH 已重启完成 · {{time}}\n\n- 起因：{{reason}}\n\n- 做到哪了：{{progress}}\n\n- 接下来第一步：{{next}}\n\n- 不用重做：{{skip}}';
+
+const SAMPLE_PREVIEW = [
+  "## DSH 已重启完成 · 14:55",
+  "",
+  "- 起因：你说过设置页要更像 DSH",
+  "",
+  "- 做到哪了：模板编辑器和弹窗都按宿主的行距重做了",
+  "",
+  "- 接下来第一步：看一眼截图，确认没有别扭的地方",
+  "",
+  "- 不用重做：不用再跑测试",
+].join("\n");
+
 const base = {
   desktop: true,
+  defaultTemplate: DEFAULT_TEMPLATE,
+  templateFields: ["reason", "progress", "next", "skip", "session", "time"],
+  preview: SAMPLE_PREVIEW,
   settings: { autoRestart: true, toolEnabled: true, resumeAfterRestart: true, deferUntilIdle: true, graceMs: 5000 },
   bootedAt: now - 1000 * 60 * 42,
   logPath: "/Users/you/.dsh/restart-handoff.log",
@@ -87,7 +121,12 @@ window.fetch = async (url) => {
     ok: true,
     json: async () => {
       dbg.steps.push("json:" + String(url));
-      return String(url).includes("status") ? window.__SCENARIO__ : { ok: true, settings: window.__SCENARIO__.settings };
+      if (!String(url).includes("status")) return { ok: true, settings: window.__SCENARIO__.settings };
+      const live = Object.assign({}, window.__SCENARIO__);
+      if (live.countdown && live.countdown.active) {
+        live.countdown = Object.assign({}, live.countdown, { restartAt: Date.now() + 3200 });
+      }
+      return live;
     },
   };
 };
@@ -108,19 +147,22 @@ window.__ModuleLoader__ = {
 // client.js 是普通脚本，直接 eval 到 window 上，方便拿到 __ModuleLoader__.load
 </script>
 <script type="module">
-import { createElement, Fragment, mount, useState, useReducer, useRef, useEffect, useCallback, useMemo } from "./mini-react.js";
+import { createElement, Fragment, mount, useState, useReducer, useRef, useEffect, useCallback, useMemo } from "./mini-react.js?v=5";
 const React = { createElement, Fragment, useState, useReducer, useRef, useEffect, useCallback, useMemo };
+const params = new URLSearchParams(location.search);
 let captured = null;
 window.__ModuleLoader__ = { load: (spec) => { captured = spec.factory(() => React); } };
 await import("../../client.js");
 window.__panel = captured;
 let comp = null;
+const bySlot = {};
 window.__dbg = { steps: [], errors: [] };
 const origFetch = window.fetch;
 window.__dbg.calls = [];
 window.fetch = (...a) => { window.__dbg.calls.push(String(a[0])); return origFetch(...a); };
 try {
-  captured.apply({ slots: { inject: (_n, fn) => fn(), register: (_m, c) => { comp = c; return () => {}; } } });
+  captured.apply({ slots: { inject: (_n, fn) => fn(), register: (meta, c) => { bySlot[meta.name] = c; return () => {}; } } });
+  comp = bySlot[params.get("slot") || "settings.section"];
   window.__dbg.steps.push("applied:" + typeof comp);
   mount(comp, document.getElementById("root"));
   window.__dbg.steps.push("mounted");

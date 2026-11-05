@@ -18,222 +18,224 @@ window.__ModuleLoader__.load({
     const BASE = "restart-handoff";
     const STYLE_ID = "dsh-restart-handoff-css";
 
-    const CSS = `
-.ar-root {
-  display: flex; flex-direction: column; gap: 18px;
-  max-width: 700px; padding: 4px 2px 18px;
+    const CSS = `/* Restart hand-off — styled as one of the host's own settings sections.
+   Every dimension below is a host token: radii 4/8/12/16, text 14-12-11 on
+   20/18/16 line boxes, hairline separators, no shadows inside the panel. */
+
+.rhs {
+  display: flex; flex-direction: column; gap: 16px;
+  max-width: 720px; padding: 2px 0 20px;
   color: var(--dsw-alias-label-primary, inherit);
-  font-size: 0.95rem; line-height: 1.6;
+  font-size: 14px; line-height: 20px;
 }
-.ar-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
-.ar-title { margin: 0; font-size: 1.06rem; font-weight: 650; letter-spacing: 0.01em; }
-.ar-sub {
-  margin: 6px 0 0; max-width: 52ch; font-size: 0.85rem; line-height: 1.65;
-  color: var(--dsw-alias-label-secondary, rgba(127,127,127,0.9));
-}
-.ar-pill {
-  flex: none; display: inline-flex; align-items: center; gap: 7px;
-  padding: 5px 12px 5px 10px; border-radius: 999px;
-  font-size: 0.76rem; font-weight: 600; white-space: nowrap;
-  border: 1px solid var(--dsw-alias-border-l1, rgba(127,127,127,0.25));
-  background: var(--dsw-alias-bg-layer-2, rgba(127,127,127,0.06));
-}
-.ar-pill-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--dsw-alias-state-idle-primary, #999); }
-.ar-pill[data-tone="success"] .ar-pill-dot { background: var(--dsw-alias-state-success-primary, #3c9a53); }
-.ar-pill[data-tone="warn"] .ar-pill-dot {
-  background: var(--dsw-alias-state-warn-primary, #d99a2b);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--dsw-alias-state-warn-primary, #d99a2b) 20%, transparent);
-}
-.ar-pill[data-tone="idle"] { color: var(--dsw-alias-label-secondary, inherit); }
+.rhs, .rhs * { box-sizing: border-box; }
+.rhs h3, .rhs p { margin: 0; }
 
-.ar-hero {
-  display: flex; align-items: center; gap: 18px; flex-wrap: wrap;
-  padding: 20px 22px; border-radius: 18px;
-  border: 1px solid color-mix(in srgb, var(--dsw-alias-brand-primary, #4b7bec) 22%, var(--dsw-alias-border-l1, rgba(127,127,127,0.22)));
-  background: linear-gradient(150deg,
-    color-mix(in srgb, var(--dsw-alias-brand-primary, #4b7bec) 10%, var(--dsw-alias-bg-layer-1, transparent)),
-    var(--dsw-alias-bg-layer-1, transparent));
+.rhs-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.rhs-title { font-size: 14px; line-height: 20px; font-weight: 600; }
+.rhs-sub {
+  margin-top: 4px; max-width: 58ch; color: var(--dsw-alias-label-secondary, inherit);
+  font-size: 12px; line-height: 18px;
 }
-.ar-hero[data-tone="warn"] {
-  border-color: color-mix(in srgb, var(--dsw-alias-state-warn-primary, #d99a2b) 45%, transparent);
-  background: linear-gradient(150deg,
-    color-mix(in srgb, var(--dsw-alias-state-warn-primary, #d99a2b) 13%, var(--dsw-alias-bg-layer-1, transparent)),
-    var(--dsw-alias-bg-layer-1, transparent));
-}
-.ar-hero[data-tone="idle"] {
-  border-color: var(--dsw-alias-border-l1, rgba(127,127,127,0.22));
-  background: var(--dsw-alias-bg-layer-1, transparent);
-}
-.ar-hero-icon {
-  flex: none; width: 54px; height: 54px; border-radius: 17px; display: grid; place-items: center;
-  font-size: 1.5rem; background: var(--dsw-alias-bg-layer-2, rgba(127,127,127,0.08));
-}
-.ar-hero-body { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; }
-.ar-hero-title { margin: 0; font-size: 1.2rem; font-weight: 650; letter-spacing: 0.01em; }
-.ar-hero-sub { margin: 0; font-size: 0.85rem; line-height: 1.6; color: var(--dsw-alias-label-secondary, inherit); }
-.ar-hero-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.ar-ring {
-  width: 62px; height: 62px; border-radius: 50%; flex: none; display: grid; place-items: center;
-  background: conic-gradient(
-    var(--dsw-alias-state-warn-primary, #d99a2b) var(--ar-progress, 0%),
-    var(--dsw-alias-border-l1, rgba(127,127,127,0.25)) 0
-  );
-}
-.ar-ring-core {
-  width: 50px; height: 50px; border-radius: 50%; display: grid; place-items: center;
-  background: var(--dsw-alias-bg-layer-1, #fff);
-  font-size: 1.02rem; font-weight: 650; font-variant-numeric: tabular-nums;
-}
-.ar-bar {
-  height: 4px; border-radius: 999px; margin-top: 7px;
-  background: var(--dsw-alias-border-l1, rgba(127,127,127,0.25)); overflow: hidden;
-}
-.ar-bar-fill {
-  height: 100%; border-radius: 999px; transition: width 0.25s linear;
-  background: var(--dsw-alias-state-warn-primary, #d99a2b);
-}
-
-.ar-card {
-  border: 1px solid var(--dsw-alias-border-l1, rgba(127,127,127,0.22));
-  border-radius: 16px; background: var(--dsw-alias-bg-layer-1, rgba(127,127,127,0.04));
-  padding: 4px 18px 6px;
-}
-.ar-card-title {
-  margin: 14px 0 0; font-size: 0.78rem; font-weight: 600; letter-spacing: 0.06em;
+.rhs-badge {
+  flex: none; display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 8px;
+  border-radius: var(--dsw-radius-sm, 8px);
+  border: 1px solid var(--dsw-alias-border-l2, rgba(127,127,127,0.32));
   color: var(--dsw-alias-label-secondary, inherit);
+  font-size: 12px; line-height: 18px; white-space: nowrap;
 }
-.ar-row {
-  display: flex; align-items: center; justify-content: space-between; gap: 18px;
-  padding: 14px 0; border-top: 1px solid var(--dsw-alias-border-l1, rgba(127,127,127,0.16));
-}
-.ar-row:first-of-type { border-top: none; }
-.ar-row-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-.ar-row-label { font-size: 0.92rem; font-weight: 550; }
-.ar-row-desc { font-size: 0.8rem; color: var(--dsw-alias-label-secondary, inherit); line-height: 1.6; }
+.rhs-badge-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--dsw-alias-state-idle-primary, #999); }
+.rhs-badge[data-tone="success"] .rhs-badge-dot { background: var(--dsw-alias-state-success-primary, #1a9c53); }
+.rhs-badge[data-tone="warn"] .rhs-badge-dot { background: var(--dsw-alias-state-warn-primary, #c07f0a); }
+.rhs-badge[data-tone="warn"] { color: var(--dsw-alias-state-warn-primary, #c07f0a); border-color: color-mix(in srgb, var(--dsw-alias-state-warn-primary, #c07f0a) 40%, transparent); }
 
-.ar-switch {
-  position: relative; flex: none; width: 46px; height: 26px; padding: 0; cursor: pointer;
-  border-radius: 999px; border: 1px solid var(--dsw-alias-border-l2, rgba(127,127,127,0.4));
-  background: var(--dsw-alias-bg-layer-2, rgba(127,127,127,0.12));
-  transition: background 0.18s ease, border-color 0.18s ease, opacity 0.18s ease;
-}
-.ar-switch[data-on="true"] {
-  background: var(--dsw-alias-brand-primary, #4b7bec); border-color: transparent;
-}
-.ar-switch:disabled { opacity: 0.42; cursor: not-allowed; }
-.ar-knob {
-  position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; border-radius: 50%;
-  background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.28);
-  transition: transform 0.18s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.ar-switch[data-on="true"] .ar-knob { transform: translateX(20px); }
-.ar-switch:focus-visible { outline: 2px solid var(--dsw-alias-brand-primary, #4b7bec); outline-offset: 2px; }
-
-.ar-more {
+/* Status block: one sentence a person can read at a glance, with the countdown
+   reduced to a number and a rule instead of a dial. */
+.rhs-status {
+  display: flex; flex-direction: column; gap: 12px; padding: 14px 16px;
+  border-radius: var(--dsw-radius-md, 12px);
   border: 1px solid var(--dsw-alias-border-l1, rgba(127,127,127,0.22));
-  border-radius: 16px; background: var(--dsw-alias-bg-layer-1, transparent); padding: 2px 18px;
+  background: var(--dsw-alias-bg-layer-1, rgba(127,127,127,0.04));
 }
-.ar-more > summary {
-  cursor: pointer; list-style: none; padding: 13px 0;
-  display: flex; align-items: center; justify-content: space-between; gap: 12px;
-  font-size: 0.85rem; color: var(--dsw-alias-label-secondary, inherit);
+.rhs-status[data-tone="warn"] {
+  border-color: color-mix(in srgb, var(--dsw-alias-state-warn-primary, #c07f0a) 45%, transparent);
+  background: color-mix(in srgb, var(--dsw-alias-state-warn-primary, #c07f0a) 7%, var(--dsw-alias-bg-layer-1, transparent));
 }
-.ar-more > summary::-webkit-details-marker { display: none; }
-.ar-more[open] > summary { border-bottom: 1px solid var(--dsw-alias-border-l1, rgba(127,127,127,0.16)); }
-.ar-chevron { transition: transform 0.18s ease; opacity: 0.7; }
-.ar-more[open] .ar-chevron { transform: rotate(180deg); }
+.rhs-status-main { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.rhs-status-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.rhs-status-title { font-size: 15px; line-height: 22px; font-weight: 600; }
+.rhs-status-sub { color: var(--dsw-alias-label-secondary, inherit); font-size: 12px; line-height: 18px; }
 
-.ar-btn {
+.rhs-timer {
+  flex: none; display: flex; align-items: baseline; gap: 3px;
+  font-variant-numeric: tabular-nums; color: var(--dsw-alias-state-warn-primary, #c07f0a);
+}
+.rhs-timer-num { font-size: 24px; line-height: 28px; font-weight: 600; letter-spacing: -0.02em; }
+.rhs-timer-unit { font-size: 12px; line-height: 18px; }
+
+.rhs-meter { height: 3px; border-radius: 999px; background: var(--dsw-alias-border-l1, rgba(127,127,127,0.25)); overflow: hidden; }
+.rhs-meter-fill {
+  display: block; height: 100%; border-radius: inherit;
+  background: var(--dsw-alias-state-warn-primary, #c07f0a);
+  transition: width 0.2s linear;
+}
+
+.rhs-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.rhs-actions-note { color: var(--dsw-alias-label-secondary, inherit); font-size: 12px; line-height: 18px; }
+
+/* Buttons mirror the host: 32px tall, 8px radius, 13/20 medium. */
+.rhs-btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-  padding: 9px 16px; border-radius: 11px; font: inherit; font-size: 0.88rem; font-weight: 600;
-  cursor: pointer; transition: filter 0.15s ease, transform 0.1s ease, background 0.15s ease;
-  border: 1px solid var(--dsw-alias-border-l2, rgba(127,127,127,0.4));
-  background: transparent; color: inherit; white-space: nowrap;
+  height: 32px; padding: 0 12px; border-radius: var(--dsw-radius-sm, 8px);
+  border: 1px solid var(--dsw-alias-border-l2, rgba(127,127,127,0.32));
+  background: transparent; color: var(--dsw-alias-label-primary, inherit);
+  font: inherit; font-size: 13px; line-height: 20px; font-weight: 500;
+  white-space: nowrap; cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
 }
-.ar-btn:hover:not(:disabled) { background: var(--dsw-alias-bg-layer-2, rgba(127,127,127,0.08)); }
-.ar-btn:active:not(:disabled) { transform: translateY(1px); }
-.ar-btn:disabled { opacity: 0.45; cursor: not-allowed; }
-.ar-btn--primary { border-color: transparent; color: #fff; background: var(--dsw-alias-brand-primary, #4b7bec); }
-.ar-btn--primary:hover:not(:disabled) { filter: brightness(1.06); background: var(--dsw-alias-brand-primary, #4b7bec); }
-.ar-btn--quiet { border-color: var(--dsw-alias-border-l1, rgba(127,127,127,0.28)); color: var(--dsw-alias-label-secondary, inherit); }
-.ar-btn--danger {
-  color: var(--dsw-alias-state-error-primary, #d9534f);
-  border-color: color-mix(in srgb, var(--dsw-alias-state-error-primary, #d9534f) 38%, transparent);
+.rhs-btn:hover:not(:disabled) { background: var(--dsw-alias-interactive-bg-hover, rgba(127,127,127,0.08)); }
+.rhs-btn:focus-visible {
+  outline: var(--dsw-focus-ring-width, 2px) solid var(--dsw-alias-state-business-primary, var(--dsw-alias-brand-primary, #4b7bec));
+  outline-offset: 1px;
 }
+.rhs-btn:disabled { opacity: 0.45; cursor: default; }
+.rhs-btn--primary {
+  border-color: transparent; background: var(--dsw-alias-brand-primary, #4b7bec); color: #fff;
+}
+.rhs-btn--primary:hover:not(:disabled) { background: var(--dsw-alias-brand-primary, #4b7bec); filter: brightness(1.06); }
+.rhs-btn--quiet { border-color: transparent; color: var(--dsw-alias-label-secondary, inherit); }
+.rhs-btn--quiet:hover:not(:disabled) { color: var(--dsw-alias-label-primary, inherit); }
 
-.ar-template-hint {
-  margin: 8px 0 10px; font-size: 0.8rem; line-height: 1.6;
-  color: var(--dsw-alias-label-secondary, inherit);
+/* Sections are plain lists separated by hairlines, like the host's own rows. */
+.rhs-section { display: flex; flex-direction: column; }
+.rhs-section-title {
+  padding-bottom: 2px; color: var(--dsw-alias-label-tertiary, inherit);
+  font-size: 12px; line-height: 18px; font-weight: 600; letter-spacing: 0.02em;
 }
-.ar-text {
-  width: 100%; box-sizing: border-box; resize: vertical; min-height: 120px;
-  padding: 11px 13px; border-radius: 12px; font-family: inherit; font-size: 0.86rem; line-height: 1.65;
-  color: inherit; background: var(--dsw-alias-bg-layer-2, rgba(127,127,127,0.06));
-  border: 1px solid var(--dsw-alias-border-l1, rgba(127,127,127,0.24));
+.rhs-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 24px;
+  padding: 14px 0; border-bottom: 0.5px solid var(--dsw-alias-border-l2, rgba(127,127,127,0.24));
 }
-.ar-text:focus-visible { outline: 2px solid var(--dsw-alias-brand-primary, #4b7bec); outline-offset: 1px; }
-.ar-text:disabled { opacity: 0.55; }
-.ar-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 0; }
-.ar-chip {
-  padding: 4px 9px; border-radius: 8px; cursor: pointer; font: inherit; font-size: 0.74rem;
-  color: var(--dsw-alias-label-secondary, inherit); white-space: nowrap;
-  border: 1px solid var(--dsw-alias-border-l1, rgba(127,127,127,0.24));
-  background: var(--dsw-alias-bg-layer-2, rgba(127,127,127,0.05));
+.rhs-section > .rhs-row:last-child { border-bottom: none; }
+.rhs-row-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.rhs-row-label { font-size: 14px; line-height: 20px; }
+.rhs-row-desc { color: var(--dsw-alias-label-secondary, inherit); font-size: 12px; line-height: 18px; }
+
+/* Switch: 36×20 with a 16px knob, brand-filled when on. */
+.rhs-switch {
+  position: relative; flex: none; width: 36px; height: 20px; padding: 0;
+  border: 0; border-radius: 999px; cursor: pointer;
+  background: var(--dsw-alias-border-l4, rgba(127,127,127,0.45));
+  transition: background 0.16s ease, opacity 0.16s ease;
 }
-.ar-chip:hover:not(:disabled) { color: inherit; border-color: var(--dsw-alias-border-l2, rgba(127,127,127,0.42)); }
-.ar-chip:disabled { opacity: 0.45; cursor: not-allowed; }
-.ar-template-actions { display: flex; align-items: center; gap: 10px; margin: 12px 0 4px; flex-wrap: wrap; }
-.ar-template-actions .ar-btn { padding: 8px 14px; font-size: 0.84rem; }
-.ar-btn--ghost { border-color: transparent; color: var(--dsw-alias-label-secondary, inherit); }
-.ar-template-note { font-size: 0.78rem; color: var(--dsw-alias-label-secondary, inherit); }
-.ar-preview-title {
-  margin: 14px 0 6px; font-size: 0.78rem; font-weight: 600; letter-spacing: 0.05em;
-  color: var(--dsw-alias-label-secondary, inherit);
+.rhs-switch[data-on="true"] { background: var(--dsw-alias-brand-primary, #4b7bec); }
+.rhs-switch:disabled { opacity: 0.45; cursor: default; }
+.rhs-switch:focus-visible {
+  outline: var(--dsw-focus-ring-width, 2px) solid var(--dsw-alias-state-business-primary, var(--dsw-alias-brand-primary, #4b7bec));
+  outline-offset: 2px;
 }
-.ar-preview {
-  margin: 0 0 12px; padding: 12px 14px; border-radius: 12px; overflow-x: auto;
-  font-family: inherit; font-size: 0.84rem; line-height: 1.7; white-space: pre-wrap; word-break: break-word;
+.rhs-knob {
+  position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%;
+  background: var(--dsw-alias-bg-layer-1, #fff);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.22);
+  transition: transform 0.16s ease;
+}
+/* The track is the label color in dark themes, so the knob follows the surface
+   underneath instead of staying white-on-white. */
+.rhs-switch[data-on="true"] .rhs-knob { background: var(--dsw-alias-bg-base, #fff); }
+.rhs-switch[data-on="true"] .rhs-knob { transform: translateX(16px); }
+
+/* Folding headers (more settings / technical detail). */
+.rhs-more { border-top: 0.5px solid var(--dsw-alias-border-l2, rgba(127,127,127,0.24)); }
+.rhs-more > summary {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 12px 0; cursor: pointer; list-style: none;
+  font-size: 14px; line-height: 20px; color: var(--dsw-alias-label-primary, inherit);
+}
+.rhs-more > summary::-webkit-details-marker { display: none; }
+.rhs-more > summary:hover { color: var(--dsw-alias-label-primary, inherit); }
+.rhs-more > summary:focus-visible {
+  outline: var(--dsw-focus-ring-width, 2px) solid var(--dsw-alias-state-business-primary, var(--dsw-alias-brand-primary, #4b7bec));
+  outline-offset: 2px; border-radius: var(--dsw-radius-xs, 4px);
+}
+.rhs-chevron { color: var(--dsw-alias-label-tertiary, inherit); font-size: 12px; transition: transform 0.18s ease; }
+.rhs-more[open] > summary .rhs-chevron { transform: rotate(180deg); }
+
+/* Template editor. */
+.rhs-hint { margin-top: 6px !important; color: var(--dsw-alias-label-secondary, inherit); font-size: 12px; line-height: 18px; }
+.rhs-textarea {
+  display: block; width: 100%; min-height: 132px; margin-top: 10px; padding: 10px 12px;
+  border-radius: var(--dsw-radius-sm, 8px);
+  border: 1px solid var(--dsw-alias-border-l2, rgba(127,127,127,0.32));
   background: var(--dsw-alias-bg-layer-2, rgba(127,127,127,0.06));
-  border: 1px dashed var(--dsw-alias-border-l1, rgba(127,127,127,0.28));
+  color: var(--dsw-alias-label-primary, inherit);
+  font-family: inherit;
+  font-size: 13px; line-height: 20px; resize: vertical;
+}
+.rhs-textarea:focus-visible {
+  outline: var(--dsw-focus-ring-width, 2px) solid var(--dsw-alias-state-business-primary, var(--dsw-alias-brand-primary, #4b7bec));
+  outline-offset: 0; border-color: transparent;
+}
+.rhs-textarea:disabled { opacity: 0.5; }
+.rhs-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.rhs-chip {
+  height: 24px; padding: 0 8px; border-radius: var(--dsw-radius-xs, 4px); cursor: pointer;
+  border: 1px solid var(--dsw-alias-border-l2, rgba(127,127,127,0.32));
+  background: transparent; color: var(--dsw-alias-label-secondary, inherit);
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+  font-size: 12px; line-height: 22px;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.rhs-chip:hover:not(:disabled) { background: var(--dsw-alias-interactive-bg-hover, rgba(127,127,127,0.08)); color: var(--dsw-alias-label-primary, inherit); }
+.rhs-chip:disabled { opacity: 0.45; cursor: default; }
+.rhs-line { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.rhs-note { color: var(--dsw-alias-label-secondary, inherit); font-size: 12px; line-height: 18px; }
+.rhs-preview-label { margin-top: 14px !important; color: var(--dsw-alias-label-tertiary, inherit); font-size: 12px; line-height: 18px; font-weight: 600; }
+.rhs-preview {
+  margin: 6px 0 0; padding: 12px 14px; max-height: 260px; overflow: auto;
+  border-radius: var(--dsw-radius-sm, 8px);
+  border: 1px solid var(--dsw-alias-border-l1, rgba(127,127,127,0.22));
+  background: var(--dsw-alias-bg-layer-2, rgba(127,127,127,0.06));
+  font-family: inherit; font-size: 13px; line-height: 20px;
+  overflow-wrap: anywhere;
+}
+.rhs-preview p { margin: 0 0 8px; }
+.rhs-preview p:last-child { margin-bottom: 0; }
+.rhs-preview-h { font-weight: 600; font-size: 15px; line-height: 22px; color: var(--dsw-alias-label-primary, inherit); }
+.rhs-preview-li { padding-left: 12px; text-indent: -12px; }
+.rhs-preview-p { color: var(--dsw-alias-label-secondary, inherit); }
+.rhs-preview-empty { color: var(--dsw-alias-label-tertiary, inherit); }
 }
 
-.ar-msg { margin: 0; font-size: 0.85rem; }
-.ar-msg[data-tone="error"] { color: var(--dsw-alias-state-error-primary, #d9534f); }
-.ar-msg[data-tone="ok"] { color: var(--dsw-alias-state-success-primary, #3c9a53); }
+.rhs-msg { font-size: 12px; line-height: 18px; color: var(--dsw-alias-label-secondary, inherit); }
+.rhs-msg[data-tone="error"] { color: var(--dsw-alias-state-error-primary, #cf3b3b); }
 
-.ar-log { display: flex; flex-direction: column; margin: 6px 0 8px; padding: 0; list-style: none; }
-.ar-item {
-  display: grid; grid-template-columns: 9px 1fr auto; gap: 4px 12px; align-items: baseline;
-  padding: 11px 0; border-top: 1px solid var(--dsw-alias-border-l1, rgba(127,127,127,0.14));
+/* History. */
+.rhs-log { display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none; }
+.rhs-item {
+  display: grid; grid-template-columns: 8px minmax(0, 1fr) auto; align-items: center;
+  column-gap: 10px; row-gap: 2px; padding: 10px 0;
+  border-bottom: 0.5px solid var(--dsw-alias-border-l2, rgba(127,127,127,0.24));
 }
-.ar-item:first-child { border-top: none; }
-.ar-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 1px; background: var(--dsw-alias-state-idle-primary, #999); }
-.ar-dot[data-tone="success"] { background: var(--dsw-alias-state-success-primary, #3c9a53); }
-.ar-dot[data-tone="warn"] { background: var(--dsw-alias-state-warn-primary, #d99a2b); }
-.ar-dot[data-tone="error"] { background: var(--dsw-alias-state-error-primary, #d9534f); }
-.ar-item-label { font-size: 0.88rem; }
-.ar-item-when { font-size: 0.76rem; color: var(--dsw-alias-label-secondary, inherit); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.ar-item-detail {
-  grid-column: 2 / 4; font-size: 0.78rem; color: var(--dsw-alias-label-secondary, inherit);
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-.ar-empty {
-  margin: 8px 0 10px; padding: 22px; border-radius: 12px; text-align: center;
-  font-size: 0.84rem; color: var(--dsw-alias-label-secondary, inherit);
-  border: 1px dashed var(--dsw-alias-border-l1, rgba(127,127,127,0.3));
-}
-.ar-foot { font-size: 0.76rem; color: var(--dsw-alias-label-secondary, inherit); }
-.ar-foot > summary { cursor: pointer; list-style: none; opacity: 0.8; }
-.ar-foot > summary::-webkit-details-marker { display: none; }
-.ar-foot-body { display: flex; flex-direction: column; gap: 3px; margin-top: 8px; }
-.ar-mono { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace; overflow-wrap: anywhere; }
+.rhs-item:last-child { border-bottom: none; }
+.rhs-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--dsw-alias-state-idle-primary, #999); }
+.rhs-dot[data-tone="success"] { background: var(--dsw-alias-state-success-primary, #1a9c53); }
+.rhs-dot[data-tone="warn"] { background: var(--dsw-alias-state-warn-primary, #c07f0a); }
+.rhs-dot[data-tone="error"] { background: var(--dsw-alias-state-error-primary, #cf3b3b); }
+.rhs-item-label { font-size: 13px; line-height: 20px; }
+.rhs-item-when { color: var(--dsw-alias-label-secondary, inherit); font-size: 12px; line-height: 18px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.rhs-item-detail { grid-column: 2 / -1; color: var(--dsw-alias-label-tertiary, inherit); font-size: 12px; line-height: 18px; overflow-wrap: anywhere; }
+.rhs-empty { color: var(--dsw-alias-label-secondary, inherit); font-size: 12px; line-height: 18px; }
+.rhs-foot-body { display: flex; flex-direction: column; gap: 4px; padding: 0 0 12px; color: var(--dsw-alias-label-secondary, inherit); font-size: 12px; line-height: 18px; }
+.rhs-mono { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace; overflow-wrap: anywhere; }
 
+/* Sidebar footer ring (sits on the account row, so it keeps that row's geometry). */
 .rh-slot { position: relative; display: inline-flex; align-items: center; width: 100%; }
 .rh-tile {
   position: relative; display: flex; align-items: center; gap: 8px;
-  width: calc(100% + 4px); margin: 0 -2px; height: 44px; padding: 6px; box-sizing: border-box;
-  border: 0; border-radius: 12px; background: transparent;
-  color: var(--dsw-alias-label-primary, #0f1115);
+  width: calc(100% + 4px); margin: 0 -2px; height: 44px; padding: 6px;
+  border: 0; border-radius: var(--dsw-radius-md, 12px); background: transparent;
+  color: var(--dsw-alias-label-primary, inherit);
   font: inherit; font-size: 14px; line-height: 1.2; font-weight: 400;
   cursor: pointer; overflow: hidden; text-align: left;
 }
@@ -246,57 +248,49 @@ window.__ModuleLoader__.load({
    its own slot and sets --rh-nudge so this icon stays on the avatar's vertical axis. */
 .rh-tile:hover:not(:disabled) { background: var(--dsw-alias-interactive-bg-hover, rgba(38, 49, 72, 0.06)); }
 .rh-tile:active:not(:disabled) { background: var(--dsw-alias-interactive-bg-hover, rgba(38, 49, 72, 0.06)); }
-.rh-tile:focus-visible { outline: 2px solid var(--dsw-alias-brand-primary, #4b7bec); outline-offset: -2px; }
+.rh-tile:focus-visible {
+  outline: var(--dsw-focus-ring-width, 2px) solid var(--dsw-alias-state-business-primary, var(--dsw-alias-brand-primary, #4b7bec));
+  outline-offset: -2px;
+}
 .rh-tile:disabled { opacity: 0.45; cursor: not-allowed; }
 .rh-tile[data-tone="warn"] { color: var(--dsw-alias-state-warn-primary, #b0741d); }
-.rh-tile[data-tone="warn"] .rh-chip { color: var(--dsw-alias-state-warn-primary, #b0741d); background: color-mix(in srgb, var(--dsw-alias-state-warn-primary, #d99a2b) 14%, transparent); }
 .rh-tile[data-tone="error"] { color: var(--dsw-alias-state-error-primary, #c0392b); }
-.rh-tile[data-tone="error"] .rh-chip { color: var(--dsw-alias-state-error-primary, #c0392b); background: color-mix(in srgb, var(--dsw-alias-state-error-primary, #d95050) 14%, transparent); }
+/* One signal in the sidebar: a single chip. While a restart is pending it draws
+   the countdown as a ring around itself instead of a second, unreadable dot. */
 .rh-chip {
-  flex: none; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center;
-  background: color-mix(in srgb, var(--dsw-alias-label-primary, #0f1115) 4%, transparent);
-  color: var(--dsw-alias-label-tertiary, #81858c);
-  font-size: 0.875rem; font-variant-numeric: tabular-nums; line-height: 1;
+  position: relative; flex: none; display: grid; place-items: center;
+  width: 30px; height: 30px; border-radius: 50%;
+  background: color-mix(in srgb, currentColor 10%, transparent);
+  font-size: 14px; line-height: 1;
 }
-.rh-icon { display: grid; place-items: center; }
-.rh-icon--glyph { font-size: 15px; line-height: 1; transform: translateY(-0.5px); }
-.rh-icon--pause { font-size: 9px; letter-spacing: 1px; }
-.rh-text { flex: 1; min-width: 0; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: inherit; }
-.rh-dot {
-  flex: none; position: relative; width: 14px; height: 14px; border-radius: 50%;
-  display: grid; place-items: center; font-size: 7px; line-height: 1;
-  color: var(--dsw-alias-state-warn-primary, #b0741d);
-  background: conic-gradient(currentColor var(--rh-progress, 0%), color-mix(in srgb, currentColor 18%, transparent) 0);
+.rh-chip[data-progress="true"] {
+  font-size: 12px; font-variant-numeric: tabular-nums; font-weight: 500;
+  background: conic-gradient(currentColor var(--rh-progress, 0%), color-mix(in srgb, currentColor 16%, transparent) 0);
 }
-.rh-dot::after {
+.rh-chip[data-progress="true"]::after {
   content: ""; position: absolute; inset: 2px; border-radius: 50%;
   background: var(--dsw-alias-bg-base, #fff);
 }
-.rh-dot[data-paused="true"] { background: color-mix(in srgb, currentColor 14%, transparent); }
-.rh-dot-glyph { position: relative; z-index: 1; }
+.rh-chip[data-paused="true"] {
+  font-size: 9px; letter-spacing: 1px;
+  background: color-mix(in srgb, currentColor 14%, transparent);
+}
+.rh-chip-text { position: relative; z-index: 1; display: grid; place-items: center; }
+
+/* The restart confirmation, matched to the host's popover: 12px radius,
+   prominent elevation, a title, one line of consequences, two buttons. */
 .rh-pop {
-  position: fixed; z-index: 61; display: flex; align-items: center; gap: 8px;
-  padding: 7px 8px 7px 11px; border-radius: 10px;
-  background: var(--dsw-alias-bg-overlay, #fff);
-  border: 1px solid var(--dsw-alias-border-l1, rgba(127,127,127,0.25));
-  box-shadow: 0 8px 24px rgba(0,0,0,0.16);
+  position: fixed; z-index: 61; width: 268px; padding: 14px;
+  border-radius: var(--dsw-radius-md, 12px);
+  background: var(--dsw-alias-bg-layer-1, #fff);
+  border: 0.5px solid var(--dsw-alias-border-l2, rgba(127,127,127,0.32));
+  box-shadow: var(--dsw-elevation-prominent, 0 8px 24px rgba(0, 0, 0, 0.16));
   color: var(--dsw-alias-label-primary, inherit);
-  font-size: 0.78rem; white-space: nowrap;
 }
-.rh-pop-text { opacity: 0.9; }
-.rh-pop-actions { display: inline-flex; gap: 6px; }
-.rh-pop-btn {
-  font: inherit; font-size: 0.78rem; padding: 3px 10px; border-radius: 7px; cursor: pointer;
-  border: 1px solid var(--dsw-alias-border-l2, rgba(127,127,127,0.35));
-  background: transparent; color: var(--dsw-alias-label-primary, inherit);
-}
-.rh-pop-btn:hover { background: var(--dsw-alias-bg-layer-2, rgba(127,127,127,0.10)); }
-.rh-pop-yes {
-  border-color: var(--dsw-alias-state-error-primary, #d9534f);
-  background: var(--dsw-alias-state-error-primary, #d9534f);
-  color: #fff;
-}
-.rh-pop-yes:hover { filter: brightness(1.06); background: var(--dsw-alias-state-error-primary, #d9534f); }
+.rh-pop-title { margin: 0; font-size: 14px; line-height: 20px; font-weight: 600; }
+.rh-pop-sub { margin: 6px 0 12px; color: var(--dsw-alias-label-secondary, inherit); font-size: 12px; line-height: 18px; }
+.rh-pop-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.rh-pop-actions .rhs-btn--quiet { margin-inline-end: auto; }
 `;
 
     function ensureStyle() {
@@ -348,21 +342,21 @@ window.__ModuleLoader__.load({
         "aria-checked": Boolean(props.checked),
         "aria-label": props.label,
         "data-on": String(Boolean(props.checked)),
-        className: "ar-switch",
+        className: "rhs-switch",
         disabled: props.disabled,
         onClick: () => props.onChange(!props.checked),
-      }, h("span", { className: "ar-knob" }));
+      }, h("span", { className: "rhs-knob" }));
     }
 
     function Row(props) {
       return h(
         "div",
-        { className: "ar-row" },
+        { className: "rhs-row" },
         h(
           "div",
-          { className: "ar-row-text" },
-          h("span", { className: "ar-row-label" }, props.label),
-          props.desc ? h("span", { className: "ar-row-desc" }, props.desc) : null,
+          { className: "rhs-row-text" },
+          h("span", { className: "rhs-row-label" }, props.label),
+          props.desc ? h("span", { className: "rhs-row-desc" }, props.desc) : null,
         ),
         h(Switch, {
           checked: props.checked,
@@ -379,7 +373,8 @@ window.__ModuleLoader__.load({
     function TemplateEditor(props) {
       const saved = String((props.settings && props.settings.continuationTemplate) || "");
       const fallback = String(props.defaultTemplate || "");
-      const [draft, setDraft] = React.useState(saved);
+      const shown = saved || fallback;
+      const [draft, setDraft] = React.useState(shown);
       const [preview, setPreview] = React.useState(String(props.preview || ""));
       const [error, setError] = React.useState("");
       const [busy, setBusy] = React.useState(false);
@@ -390,11 +385,19 @@ window.__ModuleLoader__.load({
       // Adopt a template changed elsewhere (another window, or a save landing).
       React.useEffect(() => {
         if (dirty) return;
-        if (draft !== saved) {
-          setDraft(saved);
-          latest.current = saved;
+        const next = saved || fallback;
+        if (draft !== next) {
+          setDraft(next);
+          latest.current = next;
         }
-      }, [saved]);
+      }, [saved, fallback]);
+
+      // The first paint happens before /status lands, so adopt the server's
+      // preview once it arrives.
+      React.useEffect(() => {
+        if (dirty || !props.preview) return;
+        if (preview !== props.preview) setPreview(String(props.preview));
+      }, [props.preview]);
 
       React.useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
 
@@ -431,7 +434,12 @@ window.__ModuleLoader__.load({
       const save = async () => {
         setBusy(true);
         try {
-          const ok = await props.save({ continuationTemplate: latest.current });
+          // Saving the untouched default keeps the setting empty, so a later
+          // release can improve the default instead of pinning this copy.
+          const value = latest.current;
+          const ok = await props.save({
+            continuationTemplate: fallback && value.trim() === fallback.trim() ? "" : value,
+          });
           // A refused save must not look saved: the panel message explains why,
           // and the draft stays dirty so the button still offers to save.
           if (ok === false) return;
@@ -447,39 +455,44 @@ window.__ModuleLoader__.load({
       };
 
       const reset = () => {
-        edit("");
-        setDraft("");
-        latest.current = "";
+        setDraft(fallback);
+        latest.current = fallback;
+        setDirty(false);
+        askPreview(fallback);
       };
 
       return h(
         "div",
-        { className: "ar-card" },
-        h("p", { className: "ar-card-title" }, "交接话模板"),
+        { className: "rhs-section" },
+        h("p", { className: "rhs-section-title" }, "交接话模板"),
         h(
           "p",
-          { className: "ar-template-hint" },
-          "重启后你看到的那段话长什么样，由这里决定。模型只填内容，排版按下面的模板走；哪一项没填，那一行整行不显示。写的时候段与段之间空一行（只按一个回车的两行会被合成一段）；要标题层级用 ##，要分行用 - ，别用星号加粗——有些渲染器会把星号原样露出来。",
+          { className: "rhs-hint" },
+          "重启后那段话长什么样，由这里决定。模型只填内容、排版照模板走；哪一项没填，那一行整行不显示。空一行分段；标题用 ##，分行用 -，别用星号。",
         ),
         h("textarea", {
-          className: "ar-text",
-          rows: 7,
+          className: "rhs-textarea",
+          rows: 9,
           spellCheck: false,
           value: draft,
-          placeholder: fallback,
           disabled: props.disabled || busy,
+          // Belt and braces: renderers that only set attributes leave a
+          // textarea blank, so mirror the value onto the element as well.
+          ref: (el) => {
+            if (el && typeof el === "object" && "value" in el && el.value !== draft) el.value = draft;
+          },
           onChange: (event) => edit(event.target.value),
         }),
         h(
           "div",
-          { className: "ar-chips" },
+          { className: "rhs-chips" },
           ["reason", "progress", "next", "skip", "session", "time"].map((field) =>
             h(
               "button",
               {
                 type: "button",
                 key: field,
-                className: "ar-chip",
+                className: "rhs-chip",
                 disabled: props.disabled || busy,
                 onClick: () => edit(draft + "{{" + field + "}}"),
                 title: "插入 {{" + field + "}}",
@@ -490,12 +503,12 @@ window.__ModuleLoader__.load({
         ),
         h(
           "div",
-          { className: "ar-template-actions" },
+          { className: "rhs-line" },
           h(
             "button",
             {
               type: "button",
-              className: "ar-btn",
+              className: "rhs-btn" + (dirty ? " rhs-btn--primary" : ""),
               disabled: props.disabled || busy || !dirty,
               onClick: save,
             },
@@ -503,15 +516,30 @@ window.__ModuleLoader__.load({
           ),
           h(
             "button",
-            { type: "button", className: "ar-btn ar-btn--ghost", disabled: props.disabled || busy, onClick: reset },
+            { type: "button", className: "rhs-btn rhs-btn--quiet", disabled: props.disabled || busy, onClick: reset },
             "恢复默认",
           ),
-          dirty ? h("span", { className: "ar-template-note" }, "改了还没保存") : null,
+          dirty ? h("span", { className: "rhs-note" }, "改了还没保存") : null,
         ),
-        error ? h("p", { className: "ar-msg", "data-tone": "error" }, error) : null,
-        h("p", { className: "ar-preview-title" }, "预览"),
-        h("pre", { className: "ar-preview" }, preview || "（空）"),
+        error ? h("p", { className: "rhs-msg", "data-tone": "error" }, error) : null,
+        h("p", { className: "rhs-preview-label" }, "重启后会看到"),
+        h("div", { className: "rhs-preview" }, renderPreview(preview)),
       );
+    }
+
+    // A rough stand-in for the chat renderer: headings shrink to bold lines and
+    // "- " becomes a bullet, so the preview shows what the next session reads
+    // instead of raw Markdown.
+    function renderPreview(text) {
+      const body = String(text || "").trim();
+      if (!body) return [h("span", { className: "rhs-preview-empty" }, "（空，重启后只有一句兜底）")];
+      return body.split(/\n+/).map((line, index) => {
+        const heading = /^#{1,6}\s+(.*)$/.exec(line);
+        if (heading) return h("p", { key: index, className: "rhs-preview-h" }, heading[1]);
+        const bullet = /^[-*]\s+(.*)$/.exec(line);
+        if (bullet) return h("p", { key: index, className: "rhs-preview-li" }, "· " + bullet[1]);
+        return h("p", { key: index, className: "rhs-preview-p" }, line);
+      });
     }
 
     // One signal only: the shell's "connected" toast. Everything else the
@@ -746,30 +774,49 @@ window.__ModuleLoader__.load({
           disabled: !desktop || busy,
           onClick: onRingClick,
         },
-        h("span", { className: "rh-chip" }, h("span", { className: "rh-icon" + (waiting ? " rh-icon--pause" : " rh-icon--glyph") }, glyph)),
-        armed || countdown.active || waiting
-          ? h(
-              "span",
-              { className: "rh-dot", "data-paused": String(waiting && !armed && !countdown.active), style: { "--rh-progress": progress + "%" } },
-              waiting && !armed && !countdown.active ? h("span", { className: "rh-dot-glyph" }, "❙") : null,
-            )
-          : null,
+        h(
+          "span",
+          {
+            className: "rh-chip",
+            "data-progress": String(armed || countdown.active),
+            "data-paused": String(waiting && !armed && !countdown.active),
+            style: { "--rh-progress": progress + "%" },
+          },
+          h("span", { className: "rh-chip-text" }, glyph),
+        ),
       );
 
-      const popStyle = anchor
-        ? { left: Math.max(10, anchor.left) + "px", top: Math.max(10, anchor.top - 42) + "px" }
-        : undefined;
+      // The confirmation opens above the sidebar tile: title, one line of
+      // consequences, then the two choices. Escape and click-outside both close it.
+      const popWidth = 268;
+      const viewport = typeof window !== "undefined" ? window.innerWidth : 0;
+      const popLeft = anchor
+        ? Math.max(10, Math.min(anchor.left, Math.max(10, viewport - popWidth - 12)))
+        : 12;
+      const popStyle = anchor ? { left: popLeft + "px", top: Math.max(10, anchor.top - 132) + "px" } : undefined;
+
+      React.useEffect(() => {
+        if (!ask) return undefined;
+        const onKey = (event) => {
+          if (event.key === "Escape") setAsk(false);
+        };
+        if (typeof window !== "undefined") window.addEventListener("keydown", onKey);
+        return () => {
+          if (typeof window !== "undefined") window.removeEventListener("keydown", onKey);
+        };
+      }, [ask]);
 
       const popover = ask
         ? h(
             "div",
-            { className: "rh-pop", style: popStyle, role: "dialog", "aria-label": "现在重启吗" },
-            h("span", { className: "rh-pop-text" }, "现在重启？"),
+            { className: "rh-pop", style: popStyle, role: "dialog", "aria-modal": "false", "aria-label": "现在重启吗" },
+            h("p", { className: "rh-pop-title" }, "现在重启？"),
+            h("p", { className: "rh-pop-sub" }, "正在跑的任务会先停下，重开完成后自动继续。"),
             h(
-              "span",
+              "div",
               { className: "rh-pop-actions" },
-              h("button", { type: "button", className: "rh-pop-btn rh-pop-yes", onClick: confirmRestart }, "是"),
-              h("button", { type: "button", className: "rh-pop-btn", onClick: () => setAsk(false) }, "否"),
+              h("button", { type: "button", className: "rhs-btn rhs-btn--quiet", onClick: () => setAsk(false) }, "取消"),
+              h("button", { type: "button", className: "rhs-btn rhs-btn--primary", onClick: confirmRestart }, "重启"),
             ),
           )
         : null;
@@ -913,32 +960,28 @@ window.__ModuleLoader__.load({
         .slice(0, 5);
 
       let tone = "success";
-      let emoji = "✓";
       let heroTitle = "现在不用重启";
       let heroSub = "你继续干活就行，需要重开的时候我自己处理。";
       let pillText = "守护中";
-      let heroExtra = null;
+      let actions = null;
 
       if (!desktop) {
         tone = "idle";
-        emoji = "⛔";
         heroTitle = "只能在桌面版使用";
         heroSub = "这个功能要重开 macOS 上的 DSH 桌面程序，网页版用不了。";
         pillText = "不可用";
       } else if (countdown.active) {
         tone = "warn";
-        emoji = "⌛";
-        heroTitle = seconds + " 秒后自动重启";
-        heroSub = "马上重开，几秒就回来。不想现在重开就按下面取消。";
+        heroTitle = "即将自动重启";
+        heroSub = "重开只要几秒，回来接着干活；不想现在重开就取消。";
         pillText = "即将重启";
-        heroExtra = h(
+        actions = h(
           "div",
-          { className: "ar-hero-actions" },
-          h("button", { type: "button", className: "ar-btn ar-btn--danger", onClick: cancel, disabled: busy }, "先不重启"),
+          { className: "rhs-actions" },
+          h("button", { type: "button", className: "rhs-btn rhs-btn--quiet", onClick: cancel, disabled: busy }, "取消重启"),
         );
       } else if (waiting) {
         tone = "warn";
-        emoji = "❙❙";
         heroTitle = handoff.active ? "正在写「回来做什么」" : "等你忙完再重启";
         heroSub = handoff.active
           ? "我会先把「刚才做到哪、接着做什么」记下来，最多等 2 分钟。"
@@ -946,85 +989,105 @@ window.__ModuleLoader__.load({
             ? "还有 " + busyCount + " 个任务在跑，等它们都结束我再动手。"
             : "这一轮说完就重开，不会把你的回复切一半。";
         pillText = "排队中";
-        heroExtra = h(
+        actions = h(
           "div",
-          { className: "ar-hero-actions" },
-          h("button", { type: "button", className: "ar-btn ar-btn--quiet", onClick: cancel, disabled: busy }, "先不重启"),
+          { className: "rhs-actions" },
+          h("button", { type: "button", className: "rhs-btn rhs-btn--quiet", onClick: cancel, disabled: busy }, "先不重启"),
         );
       } else if (!autoOn) {
         tone = "idle";
-        emoji = "☾";
         heroTitle = "自动重启已关闭";
         heroSub = "需要重开的时候我不会自己动手，你可以在下面自己点。";
         pillText = "已暂停";
       }
 
-      const manualButton = askConfirm
-        ? h(
-            "div",
-            { className: "ar-hero-actions" },
-            h("span", { className: "ar-hero-sub" }, "真的要现在重开吗？"),
-            h("button", { type: "button", className: "ar-btn ar-btn--primary", onClick: restartNow, disabled: busy }, "确认重开"),
-            h("button", { type: "button", className: "ar-btn ar-btn--quiet", onClick: () => setAskConfirm(false) }, "再等等"),
-          )
-        : h(
-            "div",
-            { className: "ar-hero-actions" },
-            h(
-              "button",
-              { type: "button", className: "ar-btn", onClick: () => setAskConfirm(true), disabled: busy || !desktop },
-              "现在重启",
-            ),
-          );
+      if (!actions && desktop) {
+        actions = askConfirm
+          ? h(
+              "div",
+              { className: "rhs-actions" },
+              h("span", { className: "rhs-actions-note" }, "确定现在重启？重开大约要几秒。"),
+              h("button", { type: "button", className: "rhs-btn rhs-btn--primary", onClick: restartNow, disabled: busy }, "重启"),
+              h("button", { type: "button", className: "rhs-btn rhs-btn--quiet", onClick: () => setAskConfirm(false) }, "取消"),
+            )
+          : h(
+              "div",
+              { className: "rhs-actions" },
+              h(
+                "button",
+                { type: "button", className: "rhs-btn", onClick: () => setAskConfirm(true), disabled: busy },
+                "现在重启",
+              ),
+            );
+      }
 
       return h(
         "div",
-        { className: "ar-root" },
+        { className: "rhs" },
 
         h(
           "div",
-          { className: "ar-head" },
+          { className: "rhs-head" },
           h(
             "div",
             null,
-            h("h3", { className: "ar-title" }, "重启交接"),
-            h("p", { className: "ar-sub" }, "改完插件、需要重开才生效时，它会等你忙完自动重开，回来接着干。"),
+            h("h3", { className: "rhs-title" }, "重启交接"),
+            h("p", { className: "rhs-sub" }, "改完插件、需要重开才生效时，它会等你忙完自动重开，回来接着干。"),
           ),
           h(
             "span",
-            { className: "ar-pill", "data-tone": tone, role: "status", "aria-live": "polite" },
-            h("span", { className: "ar-pill-dot" }),
+            { className: "rhs-badge", "data-tone": tone, role: "status", "aria-live": "polite" },
+            h("span", { className: "rhs-badge-dot" }),
             pillText,
           ),
         ),
 
-        error ? h("p", { className: "ar-msg", "data-tone": "error" }, error) : null,
+        error ? h("p", { className: "rhs-msg", "data-tone": "error" }, error) : null,
 
         h(
           "div",
-          { className: "ar-hero", "data-tone": tone },
-          countdown.active
-            ? h("div", { className: "ar-ring", style: { "--ar-progress": progress + "%" } },
-                h("div", { className: "ar-ring-core" }, seconds + "s"))
-            : h("div", { className: "ar-hero-icon" }, emoji),
+          { className: "rhs-status", "data-tone": tone },
           h(
             "div",
-            { className: "ar-hero-body" },
-            h("p", { className: "ar-hero-title" }, heroTitle),
-            h("p", { className: "ar-hero-sub" }, heroSub),
+            { className: "rhs-status-main" },
+            h(
+              "div",
+              { className: "rhs-status-text" },
+              h("p", { className: "rhs-status-title" }, heroTitle),
+              h("p", { className: "rhs-status-sub" }, heroSub),
+            ),
             countdown.active
-              ? h("div", { className: "ar-bar" }, h("div", { className: "ar-bar-fill", style: { width: progress + "%" } }))
+              ? h(
+                  "div",
+                  { className: "rhs-timer" },
+                  h("span", { className: "rhs-timer-num" }, String(seconds)),
+                  h("span", { className: "rhs-timer-unit" }, "秒"),
+                )
               : null,
           ),
-          countdown.active || waiting ? heroExtra : manualButton,
+          countdown.active
+            ? h(
+                "div",
+                {
+                  className: "rhs-meter",
+                  role: "progressbar",
+                  "aria-label": "距离重启",
+                  "aria-valuemin": 0,
+                  "aria-valuemax": 100,
+                  "aria-valuenow": Math.round(progress),
+                },
+                h("span", { className: "rhs-meter-fill", style: { width: Math.max(2, progress) + "%" } }),
+              )
+            : null,
+          actions,
         ),
 
-        message.text ? h("p", { className: "ar-msg", "data-tone": message.tone }, message.text) : null,
+        message.text ? h("p", { className: "rhs-msg", "data-tone": message.tone }, message.text) : null,
 
         h(
           "div",
-          { className: "ar-card" },
-          h("p", { className: "ar-card-title" }, "常用"),
+          { className: "rhs-section" },
+          h("p", { className: "rhs-section-title" }, "常用"),
           h(Row, {
             label: "需要重开时自动帮我重启",
             desc: "改完插件、装了新东西，需要重开才生效时，我自动处理。",
@@ -1050,12 +1113,12 @@ window.__ModuleLoader__.load({
 
         h(
           "details",
-          { className: "ar-more" },
+          { className: "rhs-more" },
           h(
             "summary",
             null,
             h("span", null, "更多设置"),
-            h("span", { className: "ar-chevron" }, "⌄"),
+            h("span", { className: "rhs-chevron" }, "⌄"),
           ),
           h(Row, {
             label: "允许我主动申请重启",
@@ -1090,13 +1153,13 @@ window.__ModuleLoader__.load({
 
         h(
           "div",
-          { className: "ar-card" },
-          h("p", { className: "ar-card-title" }, "最近"),
+          { className: "rhs-section" },
+          h("p", { className: "rhs-section-title" }, "最近"),
           history.length === 0
-            ? h("p", { className: "ar-empty" }, "还没有重启记录。")
+            ? h("p", { className: "rhs-empty" }, "还没有重启记录。")
             : h(
                 "ul",
-                { className: "ar-log" },
+                { className: "rhs-log" },
                 history.map((entry, index) => {
                   const kind = KIND[entry.kind] || { label: entry.kind || "事件", tone: "idle" };
                   const detail = [entry.reason, entry.detail, entry.error]
@@ -1104,11 +1167,11 @@ window.__ModuleLoader__.load({
                     .join(" · ");
                   return h(
                     "li",
-                    { className: "ar-item", key: String(entry.time) + "-" + index },
-                    h("span", { className: "ar-dot", "data-tone": kind.tone }),
-                    h("span", { className: "ar-item-label" }, kind.label),
-                    h("span", { className: "ar-item-when" }, ago(entry.time)),
-                    detail ? h("span", { className: "ar-item-detail" }, detail) : null,
+                    { className: "rhs-item", key: String(entry.time) + "-" + index },
+                    h("span", { className: "rhs-dot", "data-tone": kind.tone }),
+                    h("span", { className: "rhs-item-label" }, kind.label),
+                    h("span", { className: "rhs-item-when" }, ago(entry.time)),
+                    detail ? h("span", { className: "rhs-item-detail" }, detail) : null,
                   );
                 }),
               ),
@@ -1116,13 +1179,13 @@ window.__ModuleLoader__.load({
 
         h(
           "details",
-          { className: "ar-foot" },
-          h("summary", null, "技术详情"),
+          { className: "rhs-more" },
+          h("summary", null, h("span", null, "技术详情"), h("span", { className: "rhs-chevron" }, "⌄")),
           h(
             "div",
-            { className: "ar-foot-body" },
+            { className: "rhs-foot-body" },
             status && status.bootedAt ? h("span", null, "本次启动于 " + fullClock(status.bootedAt)) : null,
-            h("span", null, "日志：" + String((status && status.logPath) || "—")),
+            h("span", { className: "rhs-mono" }, "日志：" + String((status && status.logPath) || "—")),
           ),
         ),
       );

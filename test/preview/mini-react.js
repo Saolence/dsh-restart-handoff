@@ -57,6 +57,11 @@ function set(el, key, value) {
     for (const [k, v] of Object.entries(value)) el.style.setProperty(k.startsWith("--") ? k : k.replace(/[A-Z]/g, (m) => "-" + m.toLowerCase()), String(v));
   } else if (key.startsWith("on") && typeof value === "function") el.addEventListener(key.slice(2).toLowerCase(), value);
   else if (key === "children") { /* handled separately */ }
+  // Form state lives on the property: a `value` attribute on <textarea> is
+  // ignored by the browser, which silently blanked the editor here.
+  else if (key === "value" && el instanceof HTMLTextAreaElement) el.value = value == null ? "" : String(value);
+  else if (key === "value" && el instanceof HTMLInputElement) el.value = value == null ? "" : String(value);
+  else if (key === "checked" && el instanceof HTMLInputElement) el.checked = Boolean(value);
   else if (value !== null && value !== undefined && value !== false) el.setAttribute(key, String(value));
 }
 
