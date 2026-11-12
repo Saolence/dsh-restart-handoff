@@ -83,28 +83,34 @@ window.__ModuleLoader__.load({
 .rhs-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 .rhs-actions-note { color: var(--dsw-alias-label-secondary, inherit); font-size: 12px; line-height: 18px; }
 
-/* Buttons mirror the host: 32px tall, 8px radius, 13/20 medium. */
+/* Buttons follow the host's own settings rows (uWHYLW_button in the app): 36px
+   tall, 12px radius, a tonal fill, 14/22 text. The fill and the label are a
+   theme pair — in dark mode the tonal fill goes dark and the text stays light —
+   so a button is never painted with one half of the pair only. */
 .rhs-btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-  height: 32px; padding: 0 12px; border-radius: var(--dsw-radius-sm, 8px);
-  border: 1px solid var(--dsw-alias-border-l2, rgba(127,127,127,0.32));
-  background: transparent; color: var(--dsw-alias-label-primary, inherit);
-  font: inherit; font-size: 13px; line-height: 20px; font-weight: 500;
+  height: 36px; padding: 0 14px; border-radius: var(--dsw-radius-md, 12px);
+  border: none; background: var(--dsw-alias-bg-module-platform, rgba(127,127,127,0.09));
+  color: var(--dsw-alias-label-primary, inherit);
+  font: inherit; font-size: 14px; line-height: 22px; font-weight: 400;
   white-space: nowrap; cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
+  transition: background 0.15s ease, opacity 0.15s ease;
 }
 .rhs-btn:hover:not(:disabled) { background: var(--dsw-alias-interactive-bg-hover, rgba(127,127,127,0.08)); }
 .rhs-btn:focus-visible {
-  outline: var(--dsw-focus-ring-width, 2px) solid var(--dsw-alias-state-business-primary, var(--dsw-alias-brand-primary, #4b7bec));
-  outline-offset: 1px;
+  outline: none;
+  box-shadow: 0 0 0 2px var(--dsw-focus-ring-color, var(--dsw-alias-state-business-primary, var(--dsw-alias-brand-primary, #4b7bec)));
 }
 .rhs-btn:disabled { opacity: 0.45; cursor: default; }
+/* The one irreversible choice in a card. Host primary buttons are the filled
+   pair: fill flips with the theme, label is the matching foreground token. */
 .rhs-btn--primary {
-  border-color: transparent; background: var(--dsw-alias-brand-primary, #4b7bec); color: #fff;
+  background: var(--dsw-alias-button-primary-fill, #0f1115);
+  color: var(--dsw-alias-label-primary-foreground, #fff);
 }
-.rhs-btn--primary:hover:not(:disabled) { background: var(--dsw-alias-brand-primary, #4b7bec); filter: brightness(1.06); }
-.rhs-btn--quiet { border-color: transparent; color: var(--dsw-alias-label-secondary, inherit); }
-.rhs-btn--quiet:hover:not(:disabled) { color: var(--dsw-alias-label-primary, inherit); }
+.rhs-btn--primary:hover:not(:disabled) { background: var(--dsw-alias-button-primary-hover, #43454a); }
+.rhs-btn--quiet { background: transparent; color: var(--dsw-alias-label-secondary, inherit); }
+.rhs-btn--quiet:hover:not(:disabled) { background: var(--dsw-alias-interactive-bg-hover, rgba(127,127,127,0.08)); color: var(--dsw-alias-label-primary, inherit); }
 
 /* Sections are plain lists separated by hairlines, like the host's own rows. */
 .rhs-section { display: flex; flex-direction: column; }
@@ -230,60 +236,67 @@ window.__ModuleLoader__.load({
 .rhs-foot-body { display: flex; flex-direction: column; gap: 4px; padding: 0 0 12px; color: var(--dsw-alias-label-secondary, inherit); font-size: 12px; line-height: 18px; }
 .rhs-mono { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace; overflow-wrap: anywhere; }
 
-/* Sidebar footer ring (sits on the account row, so it keeps that row's geometry). */
-.rh-slot { position: relative; display: inline-flex; align-items: center; width: 100%; }
+/* Sidebar footer action. Geometry is the host's own seat for this slot
+   (.sB3NaG_layer in the app): a 42px row with a 12px radius when the sidebar is
+   expanded, a 36px circle on the icon rail. Same margins as the account row
+   above it, so the two line up on one axis without any measured offset. */
+.rh-slot { position: relative; display: inline-flex; align-items: center; width: 100%; height: 42px; }
+/* An icon-only control never stretches: it is the host's own icon button,
+   28px beside the expanded sidebar and 36px on the rail, sitting on the same
+   axis as the account avatar below it (6px inset from the slot). */
 .rh-tile {
-  position: relative; display: flex; align-items: center; gap: 8px;
-  width: calc(100% + 4px); margin: 0 -2px; height: 44px; padding: 6px;
-  border: 0; border-radius: var(--dsw-radius-md, 12px); background: transparent;
+  position: relative; display: flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; margin-left: 6px; padding: 0;
+  border: 0; border-radius: 50%; background: transparent;
   color: var(--dsw-alias-label-primary, inherit);
-  font: inherit; font-size: 14px; line-height: 1.2; font-weight: 400;
-  cursor: pointer; overflow: hidden; text-align: left;
+  font: inherit; cursor: pointer;
 }
-.rh-tile--rail {
-  width: 44px; flex: 0 0 44px; margin: 0 0 0 var(--rh-nudge, -6px);
-  justify-content: center; padding: 0;
-}
-/* The footer action row is padded differently from the account row above it, and the
-   two paddings differ again when the sidebar collapses to the icon rail. Ring measures
-   its own slot and sets --rh-nudge so this icon stays on the avatar's vertical axis. */
+/* Same circle, scaled up: the host's own seat on the icon rail is 36px. */
+.rh-tile--rail { width: 36px; flex: 0 0 36px; height: 36px; margin: 0 auto; }
 .rh-tile:hover:not(:disabled) { background: var(--dsw-alias-interactive-bg-hover, rgba(38, 49, 72, 0.06)); }
-.rh-tile:active:not(:disabled) { background: var(--dsw-alias-interactive-bg-hover, rgba(38, 49, 72, 0.06)); }
+.rh-tile:active:not(:disabled), .rh-tile[data-active="true"] { background: var(--dsw-alias-interactive-bg-hover, rgba(38, 49, 72, 0.06)); }
+/* The host draws focus as a ring around the control, not an inset outline;
+   the same treatment keeps this seat indistinguishable from its neighbours. */
 .rh-tile:focus-visible {
-  outline: var(--dsw-focus-ring-width, 2px) solid var(--dsw-alias-state-business-primary, var(--dsw-alias-brand-primary, #4b7bec));
-  outline-offset: -2px;
+  outline: none;
+  box-shadow: 0 0 0 2px var(--dsw-focus-ring-color, var(--dsw-alias-state-business-primary, var(--dsw-alias-brand-primary, #4b7bec)));
 }
 .rh-tile:disabled { opacity: 0.45; cursor: not-allowed; }
 .rh-tile[data-tone="warn"] { color: var(--dsw-alias-state-warn-primary, #b0741d); }
 .rh-tile[data-tone="error"] { color: var(--dsw-alias-state-error-primary, #c0392b); }
-/* One signal in the sidebar: a single chip. While a restart is pending it draws
-   the countdown as a ring around itself instead of a second, unreadable dot. */
+/* One signal in the sidebar. At rest it is a bare 16px glyph with no plate of its
+   own — the host's rows are an icon plus a label, and a tinted 30px disc beside
+   the account avatar read as a second avatar. There is only a plate when the
+   button is actually saying something: a countdown ring, or a paused banner. */
 .rh-chip {
   position: relative; flex: none; display: grid; place-items: center;
-  width: 30px; height: 30px; border-radius: 50%;
-  background: color-mix(in srgb, currentColor 10%, transparent);
+  width: 16px; height: 16px; border-radius: 50%;
   font-size: 14px; line-height: 1;
 }
-.rh-chip[data-progress="true"] {
-  font-size: 12px; font-variant-numeric: tabular-nums; font-weight: 500;
-  background: conic-gradient(currentColor var(--rh-progress, 0%), color-mix(in srgb, currentColor 16%, transparent) 0);
+/* The countdown ring is drawn around the glyph instead of replacing its box, so
+   the icon never jumps sideways as the seconds tick down. */
+.rh-chip[data-progress="true"] { font-size: 9px; font-variant-numeric: tabular-nums; font-weight: 500; }
+.rh-chip[data-progress="true"]::before {
+  content: ""; position: absolute; inset: -3px; border-radius: 50%;
+  background: conic-gradient(currentColor var(--rh-progress, 0%), color-mix(in srgb, currentColor 20%, transparent) 0);
 }
 .rh-chip[data-progress="true"]::after {
-  content: ""; position: absolute; inset: 2px; border-radius: 50%;
+  content: ""; position: absolute; inset: -1px; border-radius: 50%;
   background: var(--dsw-alias-bg-base, #fff);
 }
-.rh-chip[data-paused="true"] {
-  font-size: 9px; letter-spacing: 1px;
-  background: color-mix(in srgb, currentColor 14%, transparent);
-}
+.rh-chip[data-paused="true"] { font-size: 9px; letter-spacing: 0.5px; }
 .rh-chip-text { position: relative; z-index: 1; display: grid; place-items: center; }
 
 /* The restart confirmation, matched to the host's popover: 12px radius,
    prominent elevation, a title, one line of consequences, two buttons. */
 .rh-pop {
-  position: fixed; z-index: 61; width: 268px; padding: 14px;
+  position: fixed; z-index: 61; box-sizing: border-box; width: 268px; padding: 14px;
   border-radius: var(--dsw-radius-md, 12px);
-  background: var(--dsw-alias-bg-layer-1, #fff);
+  /* The host's menu surface is a translucent film over a blur; painting the
+     film alone makes the popover look like a ghost of the list behind it. */
+  background: var(--dsw-specific-menu, var(--dsw-alias-bg-layer-1, #fff));
+  backdrop-filter: var(--dsw-menu-backdrop-filter, blur(20px));
+  -webkit-backdrop-filter: var(--dsw-menu-backdrop-filter, blur(20px));
   border: 0.5px solid var(--dsw-alias-border-l2, rgba(127,127,127,0.32));
   box-shadow: var(--dsw-elevation-prominent, 0 8px 24px rgba(0, 0, 0, 0.16));
   color: var(--dsw-alias-label-primary, inherit);
@@ -575,7 +588,8 @@ window.__ModuleLoader__.load({
 
     function Ring(props) {
       const slotRef = React.useRef(null);
-      const [nudge, setNudge] = React.useState("-6px");
+      // null until the slot has been measured; the tile is full-width either way.
+      const [rail, setRail] = React.useState(false);
       const [status, setStatus] = React.useState(null);
       const [ask, setAsk] = React.useState(false);
       const [armUntil, setArmUntil] = React.useState(0);
@@ -650,12 +664,15 @@ window.__ModuleLoader__.load({
         };
       }, [load, gone]);
 
+      // The host gives this slot a different width when the sidebar collapses
+      // (an icon rail), so the button has two shapes rather than one shape with
+      // a measured offset: full row when there is room, a 36px circle when not.
       React.useEffect(() => {
         const element = slotRef.current;
         if (!element) return undefined;
         const read = () => {
           const width = element.getBoundingClientRect().width;
-          if (width > 0) setNudge(width < 120 ? "-1px" : "-6px");
+          if (width > 0) setRail(width < 120);
         };
         read();
         if (typeof ResizeObserver !== "function") {
@@ -746,7 +763,11 @@ window.__ModuleLoader__.load({
         const node = event && event.currentTarget;
         if (node && node.getBoundingClientRect) {
           const rect = node.getBoundingClientRect();
-          setAnchor({ left: Math.round(rect.left), top: Math.round(rect.top) });
+          setAnchor({
+            left: Math.round(rect.left),
+            top: Math.round(rect.top),
+            bottom: Math.round(rect.bottom),
+          });
         }
         setAsk(true);
       }
@@ -790,7 +811,9 @@ window.__ModuleLoader__.load({
             : countdown.active
               ? seconds + "s"
               : "↻";
-      const tone = ask ? "error" : flash || armed || waiting || countdown.active ? "warn" : "idle";
+      // A pressed row is not an error: the host marks the active row with a
+      // background, and reserves color for states that need attention.
+      const tone = flash || armed || waiting || countdown.active ? "warn" : "idle";
       const progress = armed
         ? (armMs / 3000) * 100
         : countdown.active
@@ -801,9 +824,9 @@ window.__ModuleLoader__.load({
         "button",
         {
           type: "button",
-          className: "rh-tile rh-tile--rail",
-          style: { "--rh-nudge": nudge },
+          className: "rh-tile" + (rail ? " rh-tile--rail" : ""),
           "data-tone": tone,
+          "data-active": String(ask),
           title: label,
           "aria-label": label,
           disabled: !canRestart || busy,
@@ -823,12 +846,22 @@ window.__ModuleLoader__.load({
 
       // The confirmation opens above the sidebar tile: title, one line of
       // consequences, then the two choices. Escape and click-outside both close it.
+      // It is pinned by its bottom edge, so its correct place never depends on
+      // guessing how tall it is.
       const popWidth = 268;
       const viewport = typeof window !== "undefined" ? window.innerWidth : 0;
+      const viewportH = typeof window !== "undefined" ? window.innerHeight : 0;
       const popLeft = anchor
         ? Math.max(10, Math.min(anchor.left, Math.max(10, viewport - popWidth - 12)))
         : 12;
-      const popStyle = anchor ? { left: popLeft + "px", top: Math.max(10, anchor.top - 132) + "px" } : undefined;
+      const popStyle = anchor
+        ? {
+            left: popLeft + "px",
+            bottom: Math.max(10, viewportH - anchor.top + 8) + "px",
+            maxHeight: Math.max(120, anchor.top - 18) + "px",
+            overflowY: "auto",
+          }
+        : undefined;
 
       React.useEffect(() => {
         if (!ask) return undefined;

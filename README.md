@@ -174,7 +174,7 @@ dsh plugin --profile web add @saolence/dsh-restart-handoff
 
 「更多设置」里还有三项：允许模型主动申请重启、每轮说完再动手、顺手清理过时的登录记录。
 
-侧边栏账号行上方有一枚圆形按钮：空闲是 `↻`，排队时是暂停符，倒计时显示剩余秒数；点一下可以手动重启或取消。
+侧边栏账号行上方有一枚只有图标的小按钮：空闲是 `↻`，排队时是暂停符，倒计时在图标外圈走一圈进度；点一下可以手动重启或取消。
 
 ## 已知边界
 
@@ -199,4 +199,4 @@ python3 -m http.server 8781 --directory test/preview
 
 ## 许可
 
-MIT，见 [LICENSE](LICENSE)。当前版本 0.2.0。
+MIT，见 [LICENSE](LICENSE)。当前版本 0.2.1。

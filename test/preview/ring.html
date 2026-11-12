@@ -4,58 +4,92 @@
 <meta charset="utf-8" />
 <title>侧栏底部的重启方块预览</title>
 <style>
+  /* Tokens copied from the running app, not invented: the host's brand color is
+     neutral (near-black in light, near-white in dark), never blue. Dark is the
+     default here because that is the theme this fixture exists to check. */
   :root {
-    --dsw-alias-bg-base: #16181d;
-    --dsw-alias-bg-layer-1: #1c1f26;
-    --dsw-alias-bg-layer-2: #242833;
-    --dsw-alias-bg-overlay: #1f232b;
-    --dsw-alias-border-l1: #2d323d;
-    --dsw-alias-border-l2: #3a4050;
-    --dsw-alias-label-primary: #e8eaee;
-    --dsw-alias-label-secondary: #9aa1ad;
-    --dsw-alias-brand-primary: #4d7cfe;
-    --dsw-alias-state-success-primary: #3c9a53;
-    --dsw-alias-state-warn-primary: #d99a2b;
-    --dsw-alias-state-error-primary: #d95050;
-    --dsw-alias-state-idle-primary: #6b7280;
+    --dsw-radius-sm: 8px; --dsw-radius-md: 12px;
+    --dsw-elevation-prominent: 0 0 0 0.5px rgba(255,255,255,0.1), 0 3px 8px rgba(0,0,0,0.28), 0 0 20px rgba(0,0,0,0.32);
+    --dsw-alias-bg-base: #151517;
+    --dsw-alias-bg-layer-1: #232324;
+    --dsw-alias-bg-layer-2: #2c2c2e;
+    --dsw-alias-bg-overlay: #353638;
+    --dsw-alias-border-l1: #ffffff0f;
+    --dsw-alias-border-l2: #ffffff1f;
+    --dsw-alias-border-l3: #ffffff29;
+    --dsw-alias-border-l4: #ffffff33;
+    --dsw-alias-label-primary: #f9fafb;
+    --dsw-alias-label-secondary: #cfd3d6;
+    --dsw-alias-label-tertiary: #adb2b8;
+    --dsw-alias-brand-primary: #f9fafb;
+    --dsw-alias-button-primary-fill: #f9fafb;
+    --dsw-alias-button-primary-hover: #ebeef2;
+    --dsw-alias-label-primary-foreground: #0f1115;
+    --dsw-alias-bg-module-platform: #353638;
+    --dsw-alias-interactive-bg-hover: #ffffff14;
+    --dsw-alias-interactive-bg-hover-solid: #353638;
+    --dsw-alias-state-success-primary: #22c55e;
+    --dsw-alias-state-warn-primary: #f59e0b;
+    --dsw-alias-state-error-primary: #f25a5a;
+    --dsw-alias-state-idle-primary: #81858c;
   }
   :root[data-theme="light"] {
+    --dsw-elevation-prominent: 0 0 0 0.5px rgba(0,0,0,0.08), 0 3px 8px rgba(0,0,0,0.04), 0 0 20px rgba(0,0,0,0.05);
     --dsw-alias-bg-base: #ffffff;
     --dsw-alias-bg-layer-1: #ffffff;
-    --dsw-alias-bg-layer-2: #f4f5f7;
+    --dsw-alias-bg-layer-2: #f9fafb;
     --dsw-alias-bg-overlay: #ffffff;
-    --dsw-alias-border-l1: #e6e8ec;
-    --dsw-alias-border-l2: #d6dae1;
-    --dsw-alias-label-primary: #1b1f26;
-    --dsw-alias-label-secondary: #6a7280;
-    --dsw-alias-brand-primary: #3d6ff5;
-    --dsw-alias-state-success-primary: #1a9c53;
-    --dsw-alias-state-warn-primary: #c07f0a;
-    --dsw-alias-state-error-primary: #cf3b3b;
-    --dsw-alias-state-idle-primary: #9aa1ac;
+    --dsw-alias-border-l1: #0000000a;
+    --dsw-alias-border-l2: #0000001a;
+    --dsw-alias-border-l3: #0000001f;
+    --dsw-alias-border-l4: #00000029;
+    --dsw-alias-label-primary: #0f1115;
+    --dsw-alias-label-secondary: #61666b;
+    --dsw-alias-label-tertiary: #81858c;
+    --dsw-alias-brand-primary: #0f1115;
+    --dsw-alias-button-primary-fill: #0f1115;
+    --dsw-alias-button-primary-hover: #43454a;
+    --dsw-alias-label-primary-foreground: #ffffff;
+    --dsw-alias-bg-module-platform: #f5f6f7;
+    --dsw-alias-interactive-bg-hover: #2631480f;
+    --dsw-alias-interactive-bg-hover-solid: #f1f3f5;
+    --dsw-alias-state-success-primary: #22c55e;
+    --dsw-alias-state-warn-primary: #f59e0b;
+    --dsw-alias-state-error-primary: #ec1313;
+    --dsw-alias-state-idle-primary: #979da6;
   }
   body {
     margin: 0; padding: 40px; background: var(--dsw-alias-bg-base);
     font-family: -apple-system, "SF Pro Text", "PingFang SC", system-ui, sans-serif;
   }
-  /* stand-in for the sidebar foot: a few list rows, the tile, then the account row */
+  /* Stand-in for the sidebar foot, measured off the running app: the sidebar is a
+     6px/8px padded surface, the action seat is a 264x44 row, and the account row
+     below it is a 260x44 button with 6px padding. Getting these numbers right is
+     the whole point of this fixture — a wrong mock hides a wrong button. */
   .rh-mock {
-    position: relative; width: 248px; padding: 12px 10px 10px; box-sizing: border-box;
-    background: var(--dsw-alias-bg-layer-1); border: 1px solid var(--dsw-alias-border-l1);
-    border-radius: 14px; display: flex; flex-direction: column; gap: 8px;
+    position: relative; width: 280px; padding: 6px 8px 10px; box-sizing: border-box;
+    background: var(--dsw-alias-bg-layer-2); border-radius: 14px;
+    display: flex; flex-direction: column;
   }
-  .rh-list { height: 84px; border-radius: 8px; background: var(--dsw-alias-bg-layer-2); opacity: 0.5; }
+  .rh-list { height: 84px; border-radius: 8px; background: var(--dsw-alias-bg-layer-1); opacity: 0.4; }
+  /* Block, not flex: the host's footerActions is a stretch-aligned flex column,
+     so its child spans the full width. A flex parent here would shrink-wrap the
+     seat to its contents and hide the geometry this fixture exists to check. */
+  .rh-action { display: block; width: 100%; margin-top: 8px; }
+  /* The account button sits inset 2px from the row (260 of 264 wide), which is
+     what puts its avatar on the same axis as the seat's icon. */
   .rh-account {
-    display: flex; align-items: center; gap: 9px; width: 100%;
-    padding: 8px; box-sizing: border-box; border: 0; border-radius: 9px; cursor: pointer;
+    display: flex; align-items: center; gap: 8px; width: calc(100% - 4px); height: 44px;
+    margin: 4px 2px 0; padding: 6px; box-sizing: border-box;
+    border: 0; border-radius: 12px; cursor: pointer;
     background: transparent; color: var(--dsw-alias-label-primary);
-    font: inherit; font-size: 0.82rem; text-align: left;
+    font-family: inherit; font-size: 14px; text-align: left;
   }
-  .rh-account:hover { background: var(--dsw-alias-bg-layer-2); }
+  .rh-account:hover { background: var(--dsw-alias-interactive-bg-hover); }
   .rh-avatar {
-    width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center;
-    background: var(--dsw-alias-bg-layer-2); color: var(--dsw-alias-label-secondary);
-    font-size: 0.72rem;
+    width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; flex: none;
+    background: var(--dsw-alias-bg-layer-1); color: var(--dsw-alias-label-secondary);
+    font-size: 11px;
   }
   .rh-name { flex: 1; }
   #ring { display: block; }
@@ -64,11 +98,10 @@
 <body>
 <div class="rh-mock">
   <div class="rh-list"></div>
-  <div id="ring"></div>
+  <div class="rh-action"><div id="ring"></div></div>
   <button class="rh-account" type="button">
     <span class="rh-avatar">👤</span><span class="rh-name">186****16</span>
   </button>
-</div>
 </div>
 <script>
 window.__errors = [];

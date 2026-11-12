@@ -174,7 +174,7 @@ Three everyday switches:
 
 "More settings" holds three more: let the model request a restart, act after this turn ends, and prune stale login cookies.
 
-Above the account row in the sidebar there is a round button: `↻` when idle, a pause glyph while queued, remaining seconds during a countdown. Click it to restart now or cancel.
+Above the account row the sidebar has an icon-only button: `↻` when idle, a pause symbol while queued, and the countdown draws a ring around the glyph. Click it to restart now or cancel.
 
 ## Known limits
 
@@ -199,4 +199,4 @@ Parameters: `s=idle|countdown|waiting|handoff|empty` for scenarios, `theme=dark`
 
 ## License
 
-MIT, see [LICENSE](LICENSE). Current version 0.2.0.
+MIT, see [LICENSE](LICENSE). Current version 0.2.1.
