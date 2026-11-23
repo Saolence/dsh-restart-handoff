@@ -146,6 +146,16 @@ dsh plugin --profile desktop add @saolence/dsh-restart-handoff
 >
 > 改这个包**本身**不会热重载：profile 里指向它的是符号链接，HMR 收不到通知，改完要停用再启用一次（或重启一次）才生效。
 
+### 版本兼容性
+
+| DSH | 宿主声明的 Cordis 依赖 |
+| --- | --- |
+| `0.2.2-alpha.2`、`0.2.2-alpha.3` | `~4.0.6-alpha.1`、`~4.0.6-alpha.2`，分别对应 |
+| `0.2.2-rc.1` 至 `0.2.2-rc.5`、`0.2.3-alpha.1` | `~4.1.0` |
+| `0.2.3-alpha.2` | `~4.2.0-alpha.1` |
+
+插件沿用旧宿主提供的 `requestRejection`。在采用新路由接口的宿主上，插件要求 DSH 完成认证，并校验 `owner` 权限。两条路径都有自动化测试，`0.2.3-alpha.2` 已在桌面版验证。
+
 ## 也支持 dsh web
 
 桌面版之外，`dsh web` 这类命令行宿主也能用：
@@ -199,4 +209,4 @@ python3 -m http.server 8781 --directory test/preview
 
 ## 许可
 
-MIT，见 [LICENSE](LICENSE)。当前版本 0.2.1。
+MIT，见 [LICENSE](LICENSE)。当前版本 0.2.2。

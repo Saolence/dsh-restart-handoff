@@ -48,7 +48,7 @@ const ctx = {
   },
   webServer: {
     register(spec) {
-      routes.set(`${spec.path}`, spec.handler);
+      routes.set(spec.path, spec);
       return () => {};
     },
   },
@@ -84,8 +84,8 @@ assert.equal(routes.size, 5, "no stray routes");
 
 // --- routes -------------------------------------------------------------
 /** Drive one registered route handler with a fake HTTP exchange. */
-async function call(method, name, body) {
-  const handler = routes.get(`/restart-handoff/${name}`);
+async function call(method, name, body, peer) {
+  const { handler } = routes.get(`/restart-handoff/${name}`);
   const chunks = body === undefined ? [] : [Buffer.from(JSON.stringify(body), "utf8")];
   const req = {
     method,
@@ -114,7 +114,7 @@ async function call(method, name, body) {
       this.done = true;
     },
   };
-  await handler(req, res);
+  await handler(req, res, peer);
   const text = Buffer.concat(res.chunks).toString("utf8");
   return { status: res.statusCode, json: text ? JSON.parse(text) : null };
 }
@@ -152,6 +152,26 @@ assert.equal(reset.json.ok, true);
 
 const cancel = await call("POST", "cancel", {});
 assert.equal(cancel.status, 200);
+
+// The legacy host owns admission through requestRejection, including its status code.
+assert.equal(routes.get("/restart-handoff/status").auth, undefined);
+const owner = { principal: { kind: "owner" } };
+ctx.connection.requestRejection = () => 401;
+assert.deepEqual(await call("GET", "status", undefined, owner), { status: 401, json: null });
+
+// The current host has no requestRejection and passes the authenticated Peer.
+for (const dispose of disposers.splice(0)) dispose();
+routes.clear();
+ctx.connection = {};
+mod.apply(ctx);
+for (const [name, method] of [["status", "GET"], ...["restart", "cancel", "preview", "settings"].map((name) => [name, "POST"])]) {
+  assert.equal(routes.get(`/restart-handoff/${name}`).auth, "required");
+  assert.deepEqual(await call(method, name), { status: 403, json: null });
+  assert.deepEqual(await call(method, name, {}, { principal: { kind: "guest" } }), { status: 403, json: null });
+}
+assert.equal((await call("GET", "status", undefined, owner)).json.ok, true);
+assert.equal((await call("POST", "preview", { template: "{{next}}" }, owner)).json.ok, true);
+assert.equal((await call("POST", "restart", {}, owner)).json.status, "unsupported", "the owner reaches the scheduler without relaunching the test process");
 
 for (const dispose of disposers) dispose();
 fs.rmSync(dir, { recursive: true, force: true });

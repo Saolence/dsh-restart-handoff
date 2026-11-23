@@ -1038,14 +1038,19 @@ export function apply(ctx) {
   );
 
   // --- Settings > 自动重启 panel routes -------------------------------------
+  // Detect the admission API directly because the change also landed in the 0.2.2 release candidates.
+  const legacyAdmission = typeof ctx.connection.requestRejection === "function";
   function route(method, path, handler) {
     ctx.effect(
       () => ctx.webServer.register({
         kind: "exact",
         path,
-        handler: async (req, res) => {
+        ...(legacyAdmission ? {} : { auth: "required" }),
+        handler: async (req, res, peer) => {
           try {
-            const rejection = ctx.connection.requestRejection(req);
+            const rejection = legacyAdmission
+              ? ctx.connection.requestRejection(req)
+              : peer?.principal?.kind === "owner" ? undefined : 403;
             if (rejection !== void 0) {
               res.statusCode = rejection;
               res.end();

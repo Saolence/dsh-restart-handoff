@@ -146,6 +146,16 @@ dsh plugin --profile desktop add @saolence/dsh-restart-handoff
 >
 > Editing this package does **not** hot-reload: the profile points at it through a symlink, so HMR never hears about the change. Toggle the plugin off and on (or restart once) after editing.
 
+### Version compatibility
+
+| DSH | Cordis dependency declared by the host |
+| --- | --- |
+| `0.2.2-alpha.2`, `0.2.2-alpha.3` | `~4.0.6-alpha.1`, `~4.0.6-alpha.2`, respectively |
+| `0.2.2-rc.1` through `0.2.2-rc.5`, `0.2.3-alpha.1` | `~4.1.0` |
+| `0.2.3-alpha.2` | `~4.2.0-alpha.1` |
+
+The plugin uses `requestRejection` on hosts that provide it. On hosts with the newer route API, it requires DSH authentication and checks for an `owner` peer. Automated tests cover both paths. DSH `0.2.3-alpha.2` was also verified on Desktop.
+
 ## Also works with `dsh web`
 
 Besides the desktop app, a CLI host such as `dsh web` works too:
@@ -199,4 +209,4 @@ Parameters: `s=idle|countdown|waiting|handoff|empty` for scenarios, `theme=dark`
 
 ## License
 
-MIT, see [LICENSE](LICENSE). Current version 0.2.1.
+MIT, see [LICENSE](LICENSE). Current version 0.2.2.
